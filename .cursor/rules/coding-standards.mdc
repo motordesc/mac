@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+All code must follow these standards:
+
+- TypeScript strict mode
+- Functional React components
+- TailwindCSS utility classes
+- shadcn UI components
+- Zod validation for forms
+- React Hook Form for inputs
+
+Rules:
+
+- No inline SQL queries
+- Use Prisma for all database operations
+- Avoid code duplication
+- Write reusable hooks
+- Prefer composition over inheritance

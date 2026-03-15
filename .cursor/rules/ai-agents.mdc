@@ -1,0 +1,29 @@
+---
+alwaysApply: true
+---
+AI features must use:
+
+OpenRouter API
+Vercel AI SDK
+
+Agents required:
+
+Workshop AI Assistant
+Inventory AI Agent
+Service Advisor Agent
+Financial Insights Agent
+Customer Relationship Agent
+
+Agents must support tool calling.
+
+Available tools:
+
+getRevenueStats
+getInventoryLevels
+getVehicleHistory
+getCustomerData
+getJobCards
+
+All AI responses should stream using Vercel AI SDK.
+
+Use free OpenRouter models only.

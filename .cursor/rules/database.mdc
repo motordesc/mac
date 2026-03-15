@@ -1,0 +1,34 @@
+---
+alwaysApply: true
+---
+Database uses PostgreSQL via CockroachDB.
+
+ORM: Prisma
+
+Models must include:
+
+User
+Customer
+Vehicle
+JobCard
+Service
+InventoryItem
+InventoryTransaction
+Supplier
+Expense
+Staff
+StaffSalary
+Appointment
+Invoice
+Payment
+Feedback
+Notification
+ActivityLog
+AIInsight
+
+Rules:
+
+- Use UUID as primary keys
+- Include createdAt and updatedAt
+- Use proper indexing
+- Use relations instead of JSON fields

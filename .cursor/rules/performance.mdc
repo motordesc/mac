@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+Performance rules:
+
+Use server components
+Use streaming where possible
+Avoid large client bundles
+Lazy load heavy components
+
+Database:
+
+Use indexes
+Paginate large queries
+
+Images:
+
+Use Next.js image optimization

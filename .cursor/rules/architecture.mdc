@@ -1,0 +1,41 @@
+---
+alwaysApply: true
+---
+All code must follow a scalable SaaS architecture.
+
+Structure:
+
+app/
+ dashboard/
+ jobcards/
+ customers/
+ vehicles/
+ inventory/
+ staff/
+ appointments/
+ reports/
+ ai/
+ settings/
+
+components/
+ ui/
+ forms/
+ charts/
+
+lib/
+ prisma/
+ ai/
+ tools/
+ auth/
+ utils/
+
+prisma/
+ schema.prisma
+
+Rules:
+
+- Use server components whenever possible
+- Use server actions instead of REST when possible
+- Avoid client components unless necessary
+- Use modular architecture
+- Follow clean separation between UI and logic

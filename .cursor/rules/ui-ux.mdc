@@ -1,0 +1,26 @@
+---
+alwaysApply: true
+---
+The UI must be:
+
+Mobile first
+Clean dashboard layout
+Large buttons for workshop users
+
+Use:
+
+shadcn components
+Tailwind CSS
+Framer Motion animations
+
+Navigation:
+
+Sidebar for desktop
+Bottom navigation for mobile
+
+Design style:
+
+Minimal
+Modern
+High contrast
+Card based layouts
