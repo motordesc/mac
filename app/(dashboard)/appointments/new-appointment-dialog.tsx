@@ -39,7 +39,7 @@ export function NewAppointmentDialog({
   const [open, setOpen] = useState(false);
 
   const form = useForm<CreateAppointmentInput>({
-    resolver: zodResolver(createAppointmentSchema),
+    resolver: zodResolver(createAppointmentSchema) as any,
     defaultValues: {
       customerId: "",
       vehicleId: null,
