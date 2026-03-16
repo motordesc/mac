@@ -1,40 +1,52 @@
-import { prisma } from "@/lib/prisma";
+import { getExpenses } from "@/app/actions/expenses";
+import { getCurrentRole } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ExpenseManager } from "./expense-manager";
 
-export default async function ExpensesPage() {
-  const expenses = await prisma.expense.findMany({
-    take: 50,
-    orderBy: { date: "desc" },
-  });
-  const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+type SearchParams = { page?: string };
+
+export default async function ExpensesPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const { page } = await searchParams;
+  const currentPage = page ? parseInt(page, 10) : 1;
+
+  const [{ items, total, totalPages }, role] = await Promise.all([
+    getExpenses({ page: currentPage, limit: 20 }),
+    getCurrentRole(),
+  ]);
+
+  const canManage = role === "Admin" || role === "Manager";
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Expenses</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Recent expenses (Total: {formatCurrency(total)})</CardTitle>
+          <CardTitle>Expenses ({total})</CardTitle>
         </CardHeader>
-        <CardContent>
-          {expenses.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">No expenses recorded.</p>
-          ) : (
-            <div className="space-y-3">
-              {expenses.map((e) => (
-                <div
-                  key={e.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-4"
-                >
-                  <div>
-                    <p className="font-medium">{e.category}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(e.date)} {e.description ? `· ${e.description}` : ""}
-                    </p>
-                  </div>
-                  <span className="font-medium">{formatCurrency(e.amount)}</span>
-                </div>
-              ))}
+        <CardContent className="space-y-4">
+          <ExpenseManager expenses={items} canManage={canManage} />
+
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 pt-2">
+              {currentPage > 1 && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/expenses?page=${currentPage - 1}`}>Previous</Link>
+                </Button>
+              )}
+              <span className="flex items-center px-2 text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              {currentPage < totalPages && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/expenses?page=${currentPage + 1}`}>Next</Link>
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -42,3 +54,4 @@ export default async function ExpensesPage() {
     </div>
   );
 }
+

@@ -1,12 +1,11 @@
-import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { getStaff } from "@/app/actions/staff";
+import { getCurrentRole } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StaffManager } from "./staff-manager";
 
 export default async function StaffPage() {
-  const staff = await prisma.staff.findMany({
-    orderBy: { name: "asc" },
-    include: { _count: { select: { jobCards: true } } },
-  });
+  const [staff, role] = await Promise.all([getStaff(), getCurrentRole()]);
+  const isAdmin = role === "Admin";
 
   return (
     <div className="space-y-6">
@@ -16,26 +15,10 @@ export default async function StaffPage() {
           <CardTitle>Team ({staff.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {staff.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">No staff added.</p>
-          ) : (
-            <div className="space-y-3">
-              {staff.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-4"
-                >
-                  <div>
-                    <p className="font-medium">{s.name}</p>
-                    <p className="text-sm text-muted-foreground">{s.role} · {s.phone ?? "—"}</p>
-                  </div>
-                  <span className="text-sm text-muted-foreground">{s._count.jobCards} job cards</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <StaffManager staff={staff} isAdmin={isAdmin} />
         </CardContent>
       </Card>
     </div>
   );
 }
+

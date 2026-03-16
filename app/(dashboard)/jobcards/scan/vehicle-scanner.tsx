@@ -2,12 +2,9 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Camera, Square } from "lucide-react";
-
-const Tesseract = dynamic(() => import("tesseract.js"), { ssr: false });
 
 function normalizePlate(text: string): string {
   const cleaned = text
@@ -36,14 +33,15 @@ export function VehicleScanner() {
 
   const startCamera = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setCameraActive(true);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       setResult("Camera access denied or not available.");
     }
   }, []);
@@ -52,8 +50,10 @@ export function VehicleScanner() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || !video.srcObject) return;
+
     setScanning(true);
     setResult(null);
+
     try {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
@@ -61,13 +61,17 @@ export function VehicleScanner() {
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+      // FIX: lazy-import the Tesseract module directly inside the async function.
+      // next/dynamic() wraps React components — it cannot be used for raw JS modules.
+      const Tesseract = await import("tesseract.js");
       const {
         data: { text },
-      } = await Tesseract.recognize(dataUrl, "eng", {
-        logger: () => {},
-      });
+      } = await Tesseract.recognize(dataUrl, "eng", { logger: () => {} });
+
       const plate = normalizePlate(text);
       setResult(plate || "No plate text detected. Try again.");
+
       if (plate) {
         const res = await fetch(`/api/vehicles/lookup?plate=${encodeURIComponent(plate)}`);
         const data = await res.json();
@@ -79,7 +83,7 @@ export function VehicleScanner() {
         }
         router.push(`/jobcards/new?plate=${encodeURIComponent(plate)}`);
       }
-    } catch (e) {
+    } catch {
       setResult("Scan failed. Try again.");
     } finally {
       setScanning(false);
@@ -111,11 +115,21 @@ export function VehicleScanner() {
           </Button>
         ) : (
           <>
-            <Button size="lg" onClick={captureAndScan} disabled={scanning} className="min-h-[44px]">
+            <Button
+              size="lg"
+              onClick={captureAndScan}
+              disabled={scanning}
+              className="min-h-[44px]"
+            >
               <Square className="mr-2 size-5" />
               {scanning ? "Scanning…" : "Capture & scan"}
             </Button>
-            <Button size="lg" variant="outline" onClick={stopCamera} className="min-h-[44px]">
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={stopCamera}
+              className="min-h-[44px]"
+            >
               Stop camera
             </Button>
           </>
@@ -135,3 +149,4 @@ export function VehicleScanner() {
     </div>
   );
 }
+

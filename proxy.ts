@@ -1,23 +1,23 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import type { NextRequest } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/pending-access",
   "/api/webhooks(.*)",
-  "/api/uploadthing(.*)",
 ]);
 
-const clerkHandler = clerkMiddleware(async (auth, request) => {
+/**
+ * IMPORTANT: Next.js 16 reads the DEFAULT export from proxy.ts as the middleware.
+ * The previous named `export function proxy()` was never executed by Next.js.
+ * This fix restores full Clerk auth protection across the app.
+ */
+export default clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
 });
-
-export function proxy(request: NextRequest) {
-  return clerkHandler(request);
-}
 
 export const config = {
   matcher: [
