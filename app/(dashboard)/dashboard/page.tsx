@@ -162,10 +162,12 @@ export default async function DashboardPage() {
     },
   ];
 
-  const revenueMap = new Map(revenueRows.map((r: { day: string; revenue: number }) => [r.day, Number(r.revenue)]));
-  const revenueByDay = last30Days.map((d) => ({
+  const revenueMap = new Map<string, number>(
+    revenueRows.map((r: { day: string; revenue: number }) => [r.day, Number(r.revenue)])
+  );
+  const revenueByDay: Array<{ date: string; revenue: number }> = last30Days.map((d) => ({
     date: d,
-    revenue: revenueMap.get(d) ?? 0,
+    revenue: Number(revenueMap.get(d) ?? 0),
   }));
 
   const [serviceCounts, vehicleTypeCounts, staffCompleted] = await Promise.all([

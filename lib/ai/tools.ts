@@ -8,7 +8,7 @@ export const getRevenueStats = tool({
     period: z.enum(["today", "week", "month"]).optional().default("month"),
     branchId: z.string().optional(),
   }),
-  execute: async ({ period, branchId }: { period?: "today" | "week" | "month"; branchId?: string }) => {
+  execute: async ({ period, branchId }) => {
     const now = new Date();
     const start = period === "today" ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
       : period === "week" ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -32,7 +32,7 @@ export const getInventoryLevels = tool({
       where: branchId ? { branchId } : {},
       select: { name: true, sku: true, quantity: true, minQuantity: true, branch: { select: { name: true } } },
     });
-    const lowStock = items.filter((i) => i.quantity <= i.minQuantity);
+    const lowStock = items.filter((i: { quantity: number; minQuantity: number }) => i.quantity <= i.minQuantity);
     return { totalItems: items.length, lowStockCount: lowStock.length, lowStockItems: lowStock.slice(0, 10) };
   },
 });
