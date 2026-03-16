@@ -28,13 +28,9 @@ export default async function DashboardPage() {
   const branchId = await getSelectedBranchId();
   const branchWhere = branchId ? { branchId } : {};
 
-  const branchName = branchId
-    ? await prisma.branch
-        .findUnique({ where: { id: branchId }, select: { name: true } })
-        .then((b) => b?.name)
-    : null;
-
+  // Fetch everything in parallel to avoid async waterfalls
   const [
+    branchName,
     openJobCards,
     inProgressJobCards,
     completedJobCards,
@@ -43,7 +39,11 @@ export default async function DashboardPage() {
     dailyRevenue,
     monthlyRevenue,
     lowStockCount,
+    revenueRows,
   ] = await Promise.all([
+    branchId
+      ? prisma.branch.findUnique({ where: { id: branchId }, select: { name: true } }).then((b) => b?.name)
+      : Promise.resolve(null),
     prisma.jobCard.count({ where: { ...branchWhere, status: "OPEN" } }),
     prisma.jobCard.count({ where: { ...branchWhere, status: "IN_PROGRESS" } }),
     prisma.jobCard.count({ where: { ...branchWhere, status: "COMPLETED" } }),
@@ -81,6 +81,21 @@ export default async function DashboardPage() {
           SELECT COUNT(*)::bigint AS count FROM "InventoryItem"
           WHERE quantity <= "minQuantity"
         `.then((r) => Number(r[0].count)),
+    branchId
+      ? prisma.$queryRaw<Array<{ day: string; revenue: number }>>`
+          SELECT TO_CHAR("paidAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day,
+                 COALESCE(SUM(amount), 0)::float AS revenue
+          FROM "Payment"
+          WHERE "paidAt" >= ${thirtyDaysAgo} AND "branchId" = ${branchId}
+          GROUP BY day ORDER BY day ASC
+        `
+      : prisma.$queryRaw<Array<{ day: string; revenue: number }>>`
+          SELECT TO_CHAR("paidAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day,
+                 COALESCE(SUM(amount), 0)::float AS revenue
+          FROM "Payment"
+          WHERE "paidAt" >= ${thirtyDaysAgo}
+          GROUP BY day ORDER BY day ASC
+        `,
   ]);
 
   const widgets = [
@@ -147,25 +162,8 @@ export default async function DashboardPage() {
     },
   ];
 
-  // ── Revenue chart data ─────────────────────────────────────────────────
-  const revenueRows = branchId
-    ? await prisma.$queryRaw<Array<{ day: string; revenue: number }>>`
-        SELECT TO_CHAR("paidAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day,
-               COALESCE(SUM(amount), 0)::float AS revenue
-        FROM "Payment"
-        WHERE "paidAt" >= ${thirtyDaysAgo} AND "branchId" = ${branchId}
-        GROUP BY day ORDER BY day ASC
-      `
-    : await prisma.$queryRaw<Array<{ day: string; revenue: number }>>`
-        SELECT TO_CHAR("paidAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day,
-               COALESCE(SUM(amount), 0)::float AS revenue
-        FROM "Payment"
-        WHERE "paidAt" >= ${thirtyDaysAgo}
-        GROUP BY day ORDER BY day ASC
-      `;
-
-  const revenueMap = new Map(revenueRows.map((r: any) => [r.day, Number(r.revenue)]));
-  const revenueByDay = last30Days.map((d: any) => ({
+  const revenueMap = new Map(revenueRows.map((r) => [r.day, Number(r.revenue)]));
+  const revenueByDay = last30Days.map((d) => ({
     date: d,
     revenue: revenueMap.get(d) ?? 0,
   }));
@@ -178,13 +176,13 @@ export default async function DashboardPage() {
         ...(branchId ? { where: { jobCard: { branchId } } } : {}),
       })
       .then(async (groups) => {
-        const ids = groups.map((g: any) => g.serviceId);
+        const ids = groups.map((g) => g.serviceId);
         const services = await prisma.service.findMany({
           where: { id: { in: ids } },
           select: { id: true, name: true },
         });
-        const map = new Map(services.map((s: any) => [s.id, s.name]));
-        return groups.map((g: any) => ({
+        const map = new Map(services.map((s) => [s.id, s.name]));
+        return groups.map((g) => ({
           name: map.get(g.serviceId) ?? "Unknown",
           count: g._count,
         }));
@@ -199,7 +197,7 @@ export default async function DashboardPage() {
           : {}),
       })
       .then((groups) =>
-        groups.map((g: any) => ({ type: g.make ?? "Unknown", count: g._count }))
+        groups.map((g) => ({ type: g.make ?? "Unknown", count: g._count }))
       ),
 
     prisma.jobCard
@@ -210,14 +208,14 @@ export default async function DashboardPage() {
       })
       .then(async (groups) => {
         const ids = groups
-          .map((g: any) => g.technicianId)
+          .map((g) => g.technicianId)
           .filter(Boolean) as string[];
         const staff = await prisma.staff.findMany({
           where: { id: { in: ids } },
           select: { id: true, name: true },
         });
-        const map = new Map(staff.map((s: any) => [s.id, s.name]));
-        return groups.map((g: any) => ({
+        const map = new Map(staff.map((s) => [s.id, s.name]));
+        return groups.map((g) => ({
           name: g.technicianId
             ? (map.get(g.technicianId) ?? "Unassigned")
             : "Unassigned",

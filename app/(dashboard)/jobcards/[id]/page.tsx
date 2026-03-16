@@ -55,7 +55,7 @@ export default async function JobCardDetailPage({
   const payStatus = jc.invoice?.status;
   const pcfg   = payStatus ? paymentConfig[payStatus] : null;
 
-  const totalPaid = jc.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const totalPaid = jc.payments.reduce((sum : number, p : any) => sum + Number(p.amount), 0);
   const invoiceTotal = jc.invoice ? Number(jc.invoice.total) : null;
   const balance = invoiceTotal != null ? invoiceTotal - totalPaid : null;
 

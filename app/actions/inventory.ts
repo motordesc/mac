@@ -18,7 +18,6 @@ export async function getInventoryItems(params: {
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
   const skip = (page - 1) * limit;
-  const branchFilter = params.branchId ? `AND i."branchId" = '${params.branchId}'` : "";
 
   if (params.lowStock) {
     const [items, countResult] = await Promise.all([
@@ -29,8 +28,8 @@ export async function getInventoryItems(params: {
           sku: string | null;
           quantity: number;
           minQuantity: number;
-          purchasePrice: unknown;
-          sellingPrice: unknown;
+          purchasePrice: number;
+          sellingPrice: number;
           supplierId: string | null;
           branchId: string;
           supplier_name: string | null;
@@ -38,7 +37,8 @@ export async function getInventoryItems(params: {
       >`
         SELECT
           i.id, i.name, i.sku, i.quantity, i."minQuantity",
-          i."purchasePrice", i."sellingPrice", i."supplierId", i."branchId",
+          i."purchasePrice"::float AS "purchasePrice", i."sellingPrice"::float AS "sellingPrice", 
+          i."supplierId", i."branchId",
           s.name AS supplier_name
         FROM "InventoryItem" i
         LEFT JOIN "Supplier" s ON i."supplierId" = s.id

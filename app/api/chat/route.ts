@@ -2,15 +2,16 @@ import { streamText, convertToModelMessages } from "ai";
 import { openrouter, FREE_MODEL } from "@/lib/ai/openrouter";
 import { aiTools } from "@/lib/ai/tools";
 import { auth } from "@clerk/nextjs/server";
-import { getSelectedBranchId } from "@/lib/branch";
+import { getAuthorizedBranchId } from "@/lib/branch";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const branchId = await getSelectedBranchId();
+  const branchId = await getAuthorizedBranchId();
   let branchContext = "No specific branch selected — you have access to data from all branches.";
   if (branchId) {
     const branch = await prisma.branch.findUnique({ where: { id: branchId }, select: { name: true } });
@@ -32,14 +33,22 @@ You help staff with:
 Use the provided tools to fetch real data. Always present numbers in Indian Rupees (₹).
 Be concise, professional, and actionable. When you identify a business problem (e.g. many unpaid invoices, low stock, idle technicians), suggest a concrete next step.`;
 
-  const { messages } = (await req.json()) as { messages: Array<{ role: string; content: string; id?: string }> };
+  const body = await req.json();
+  const { messages } = z.object({
+    messages: z.array(z.object({
+      role: z.enum(["user", "assistant", "system", "tool"]),
+      content: z.string(),
+      id: z.string().optional(),
+    })),
+  }).parse(body);
+
   const modelMessages = await convertToModelMessages(messages);
   const result = streamText({
     model: openrouter(FREE_MODEL),
     system: SYSTEM_PROMPT,
     messages: modelMessages,
     tools: aiTools,
-    maxSteps: 5,
+    maxRetries: 5,
   });
   return result.toUIMessageStreamResponse();
 }

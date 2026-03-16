@@ -13,19 +13,8 @@ export default async function ReportsPage() {
   const branchId = await getSelectedBranchId();
   const branchWhere = branchId ? { branchId } : {};
 
-  const branchName = branchId
-    ? await prisma.branch
-        .findUnique({ where: { id: branchId }, select: { name: true } })
-        .then((b) => b?.name ?? "Branch")
-    : null;
-
-  const branches = await prisma.branch.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
-
   const [
+    branchName,
     dailyRevenue,
     weeklyRevenue,
     monthlyRevenue,
@@ -36,6 +25,9 @@ export default async function ReportsPage() {
     completedJobCards,
     inventoryAlerts,
   ] = await Promise.all([
+    branchId
+      ? prisma.branch.findUnique({ where: { id: branchId }, select: { name: true } }).then((b) => b?.name ?? "Branch")
+      : Promise.resolve(null),
     prisma.payment.aggregate({ where: { ...branchWhere, paidAt: { gte: todayStart } }, _sum: { amount: true } }),
     prisma.payment.aggregate({ where: { ...branchWhere, paidAt: { gte: weekStart } }, _sum: { amount: true } }),
     prisma.payment.aggregate({ where: { ...branchWhere, paidAt: { gte: monthStart } }, _sum: { amount: true } }),
@@ -64,6 +56,12 @@ export default async function ReportsPage() {
       SELECT COUNT(*)::bigint AS count FROM "InventoryItem" WHERE quantity <= "minQuantity"
     `.then((r) => Number(r[0].count)),
   ]);
+
+  const branches = await prisma.branch.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
 
   const netProfit =
     Number(monthlyRevenue._sum.amount ?? 0) - Number(expensesTotal._sum.amount ?? 0);

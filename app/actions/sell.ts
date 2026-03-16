@@ -3,8 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/actions/auth-guard";
-import { getSelectedBranchId } from "@/lib/branch";
+import { getAuthorizedBranchId } from "@/lib/branch";
 import { z } from "zod";
+import { crypto } from "crypto";
 
 const saleItemSchema = z.object({
   type: z.enum(["SERVICE", "PART"]),
@@ -44,18 +45,17 @@ export type SaleItem = z.infer<typeof saleItemSchema>;
 
 function generateInvoiceNumber(): string {
   const now = new Date();
-  const prefix = "INV";
   const datePart = now.toISOString().slice(2, 10).replace(/-/g, "");
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `${prefix}-${datePart}-${rand}`;
+  const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `INV-${datePart}-${randomPart}`;
 }
 
 export async function processQuickSale(data: QuickSaleInput) {
   await requireRole(["Admin", "Manager", "Technician"]);
 
-  const branchId = await getSelectedBranchId();
+  const branchId = await getAuthorizedBranchId();
   if (!branchId) {
-    throw new Error("No branch selected. Please select a branch from the top bar before making a sale.");
+    throw new Error("Unauthorized or no branch selected. Please select a branch you have access to.");
   }
 
   // Validate input
@@ -65,6 +65,23 @@ export async function processQuickSale(data: QuickSaleInput) {
     throw new Error(first?.message ?? "Validation failed");
   }
   const d = parsed.data;
+
+  // Stock check
+  const partItems = d.items.filter(i => i.type === "PART");
+  if (partItems.length > 0) {
+    const inventoryIds = partItems.map(i => i.refId);
+    const stockLevels = await prisma.inventoryItem.findMany({
+      where: { id: { in: inventoryIds } },
+      select: { id: true, quantity: true, name: true }
+    });
+
+    for (const item of partItems) {
+      const stock = stockLevels.find(s => s.id === item.refId);
+      if (!stock || stock.quantity < item.quantity) {
+        throw new Error(`Insufficient stock for ${stock?.name || "item"}. Available: ${stock?.quantity || 0}, Required: ${item.quantity}`);
+      }
+    }
+  }
 
   // Need either customerId or (customerName + customerPhone)
   if (!d.customerId && (!d.customerName || !d.customerPhone)) {

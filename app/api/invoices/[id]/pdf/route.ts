@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { renderToStream } from "@react-pdf/renderer";
 import { InvoicePdfDocument } from "@/lib/pdf/invoice-pdf";
 import { validateId } from "@/lib/utils/validate-id";
+import { verifyBranchAccess } from "@/lib/branch";
 import React from "react";
 import { Readable } from "stream";
 
@@ -29,6 +30,7 @@ export async function GET(
     return NextResponse.json({ error: "Invalid invoice ID" }, { status: 400 });
   }
 
+  // Fetch invoice with security check
   const invoice = await prisma.invoice.findUnique({
     where: { id },
     include: {
@@ -38,10 +40,20 @@ export async function GET(
       items: true,
     },
   });
+
   if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
 
+  // Security: Check if user has access to the invoice's branch
+  if (invoice.branchId) {
+    const hasAccess = await verifyBranchAccess(invoice.branchId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden: No access to this branch" }, { status: 403 });
+    }
+  }
+
   const settings = await prisma.garageSettings.findMany();
-  const taxRate = settings.find((s) => s.key === "tax_rate")?.value;
+  const taxRateSetting = settings.find((s: { key: string; value: string }) => s.key === "tax_rate");
+  const taxRate = taxRateSetting ? Number(taxRateSetting.value) : undefined;
 
   const data = {
     companyName: "Motor Auto Care",
@@ -58,14 +70,14 @@ export async function GET(
     customerPhone: invoice.customer.phone,
     customerAddress: invoice.customer.address ?? undefined,
     vehicleNumber: invoice.jobCard?.vehicle?.numberPlate,
-    items: invoice.items.map((i: any) => ({
+    items: invoice.items.map((i: { description: string; quantity: number; unitPrice: number | any }) => ({
       description: i.description,
       quantity: i.quantity,
-      unitPrice: i.unitPrice,
+      unitPrice: Number(i.unitPrice),
     })),
-    subtotal: invoice.subtotal,
-    tax: invoice.tax,
-    total: invoice.total,
+    subtotal: Number(invoice.subtotal),
+    tax: Number(invoice.tax),
+    total: Number(invoice.total),
     status: invoice.status,
     taxRate,
   };

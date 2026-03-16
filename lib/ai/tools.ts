@@ -53,7 +53,7 @@ export const getVehicleHistory = tool({
       found: true,
       vehicle: { numberPlate: vehicle.numberPlate, make: vehicle.make, model: vehicle.model },
       customer: vehicle.customer,
-      jobCards: vehicle.jobCards.map((jc: any) => ({ id: jc.id, status: jc.status, branch: jc.branch?.name, technician: jc.technician?.name, createdAt: jc.createdAt })),
+      jobCards: vehicle.jobCards.map((jc: { id: string; status: any; branch: { name: string } | null; technician: { name: string } | null; createdAt: Date }) => ({ id: jc.id, status: jc.status, branch: jc.branch?.name, technician: jc.technician?.name, createdAt: jc.createdAt })),
     };
   },
 });
@@ -75,8 +75,7 @@ export const getCustomerData = tool({
     });
     return { count: customers.length, customers };
   },
-});
-});
+})
 
 export const getJobCardSummary = tool({
   description: "Get job card counts and recent cards. Optionally filter by branch or status.",
@@ -97,8 +96,8 @@ export const getJobCardSummary = tool({
       prisma.jobCard.groupBy({ by: ["status"], where: branchId ? { branchId } : {}, _count: true }),
     ]);
     return {
-      statusCounts: counts.reduce((acc: Record<string, number>, c: any) => ({ ...acc, [c.status]: c._count }), {}),
-      recentJobCards: items.map((jc: any) => ({ id: jc.id, status: jc.status, vehicle: jc.vehicle.numberPlate, customer: jc.customer.name, technician: jc.technician?.name, branch: jc.branch?.name })),
+      statusCounts: counts.reduce((acc: Record<string, number>, c: { status: string; _count: number }) => ({ ...acc, [c.status]: c._count }), {}),
+      recentJobCards: items.map((jc: { id: string; status: any; vehicle: { numberPlate: string }; customer: { name: string }; technician: { name: string } | null; branch: { name: string } | null }) => ({ id: jc.id, status: jc.status, vehicle: jc.vehicle.numberPlate, customer: jc.customer.name, technician: jc.technician?.name, branch: jc.branch?.name })),
     };
   },
 });
@@ -110,14 +109,14 @@ export const getBranchOverview = tool({
     const branches = await prisma.branch.findMany({ where: { isActive: true }, include: { _count: { select: { jobCards: true, staff: true, invoices: true } } } });
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const revenues = await Promise.all(branches.map(async (b: any) => {
+    const revenues = await Promise.all(branches.map(async (b: { id: string }) => {
       const agg = await prisma.payment.aggregate({ where: { branchId: b.id, paidAt: { gte: monthStart } }, _sum: { amount: true } });
       return { id: b.id, revenue: Number(agg._sum.amount ?? 0) };
     }));
-    const rMap = new Map(revenues.map((r: any) => [r.id, r.revenue]));
+    const rMap = new Map(revenues.map((r: { id: string; revenue: number }) => [r.id, r.revenue]));
     return {
       totalBranches: branches.length,
-      branches: branches.map((b: any) => ({ name: b.name, address: b.address, jobCards: b._count.jobCards, staff: b._count.staff, invoices: b._count.invoices, monthlyRevenue: rMap.get(b.id) ?? 0 })),
+      branches: branches.map((b: { name: string; address: string | null; _count: { jobCards: number; staff: number; invoices: number }; id: string }) => ({ name: b.name, address: b.address, jobCards: b._count.jobCards, staff: b._count.staff, invoices: b._count.invoices, monthlyRevenue: rMap.get(b.id) ?? 0 })),
     };
   },
 });
@@ -125,7 +124,7 @@ export const getBranchOverview = tool({
 export const getBusinessInsights = tool({
   description: "Get a business health summary to help grow the business. Covers open jobs, completions, unpaid invoices, low stock, and top services.",
   parameters: z.object({ branchId: z.string().optional() }),
-  execute: async ({ branchId }) => {
+  execute: async ({ branchId }: { branchId?: string }) => {
     const now = new Date();
     const bw = branchId ? { branchId } : {};
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -134,11 +133,11 @@ export const getBusinessInsights = tool({
       prisma.jobCard.count({ where: { ...bw, status: { in: ["COMPLETED", "CLOSED"] }, updatedAt: { gte: monthStart } } }),
       prisma.invoice.count({ where: { ...bw, status: "PENDING" } }),
       prisma.jobCardService.groupBy({ by: ["serviceId"], _count: true, orderBy: { _count: { serviceId: "desc" } }, take: 5, ...(branchId ? { where: { jobCard: { branchId } } } : {}) })
-        .then(async (groups) => {
-          const ids = groups.map((g: any) => g.serviceId);
+        .then(async (groups: Array<{ serviceId: string; _count: number }>) => {
+          const ids = groups.map((g: { serviceId: string }) => g.serviceId);
           const svcs = await prisma.service.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
-          const map = new Map(svcs.map((s: any) => [s.id, s.name]));
-          return groups.map((g: any) => ({ name: map.get(g.serviceId) ?? "Unknown", count: g._count }));
+          const map = new Map(svcs.map((s: { id: string; name: string }) => [s.id, s.name]));
+          return groups.map((g: { serviceId: string; _count: number }) => ({ name: map.get(g.serviceId) ?? "Unknown", count: g._count }));
         }),
     ]);
     return {
