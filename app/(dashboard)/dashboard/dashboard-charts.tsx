@@ -70,7 +70,7 @@ export function DashboardCharts({
   };
 
   // Only show every 5th label on mobile to avoid crowding
-  const revenueWithLabels = revenueData.map((d, i) => ({
+  const revenueWithLabels = revenueData.map((d: any, i: number) => ({
     ...d,
     displayDate: i % 5 === 0 ? formatDay(d.date) : "",
   }));
@@ -178,7 +178,7 @@ export function DashboardCharts({
                   innerRadius={35}
                   paddingAngle={3}
                 >
-                  {vehicleTypeData.slice(0, 6).map((_, i) => (
+                  {vehicleTypeData.slice(0, 6).map((_: any, i: number) => (
                     <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Pie>
@@ -186,7 +186,7 @@ export function DashboardCharts({
             </ResponsiveContainer>
             {/* Legend */}
             <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
-              {vehicleTypeData.slice(0, 6).map((d, i) => (
+              {vehicleTypeData.slice(0, 6).map((d: any, i: number) => (
                 <span key={d.type} className="flex items-center gap-1 text-xs text-muted-foreground">
                   <span
                     className="inline-block size-2 rounded-full"

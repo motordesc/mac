@@ -95,7 +95,7 @@ export function NewAppointmentDialog({
                 <SelectValue placeholder="Select customer" />
               </SelectTrigger>
               <SelectContent>
-                {customers.map((c) => (
+                {customers.map((c: any) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name} ({c.phone})
                   </SelectItem>
@@ -118,7 +118,7 @@ export function NewAppointmentDialog({
                 <SelectValue placeholder="Select vehicle" />
               </SelectTrigger>
               <SelectContent>
-                {filteredVehicles.map((v) => (
+                {filteredVehicles.map((v: any) => (
                   <SelectItem key={v.id} value={v.id}>
                     {v.numberPlate}
                   </SelectItem>

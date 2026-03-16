@@ -335,7 +335,7 @@ export function QuickSaleWizard({
                   <SelectTrigger><SelectValue placeholder="Assign technician" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">— None —</SelectItem>
-                    {staff.map((s) => (
+                    {staff.map((s: any) => (
                       <SelectItem key={s.id} value={s.id}>{s.name} ({s.role})</SelectItem>
                     ))}
                   </SelectContent>
@@ -392,7 +392,7 @@ export function QuickSaleWizard({
                   {filteredServices.length === 0 && (
                     <p className="col-span-2 py-4 text-center text-sm text-muted-foreground">No services found.</p>
                   )}
-                  {filteredServices.map((svc) => {
+                  {filteredServices.map((svc: any) => {
                     const inCart = cart.find((c) => c.refId === svc.id && c.type === "SERVICE");
                     return (
                       <button
@@ -418,7 +418,7 @@ export function QuickSaleWizard({
                   {filteredParts.length === 0 && (
                     <p className="col-span-2 py-4 text-center text-sm text-muted-foreground">No parts found.</p>
                   )}
-                  {filteredParts.map((part) => {
+                  {filteredParts.map((part: any) => {
                     const inCart = cart.find((c) => c.refId === part.id && c.type === "PART");
                     const lowStock = part.quantity <= 0;
                     return (
@@ -460,7 +460,7 @@ export function QuickSaleWizard({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {cart.map((item) => (
+                {cart.map((item: any) => (
                   <div key={item.key} className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
                     <Badge variant="outline" className="text-xs shrink-0">{item.type}</Badge>
                     <span className="flex-1 text-sm font-medium truncate">{item.description}</span>
@@ -511,7 +511,7 @@ export function QuickSaleWizard({
             {/* Order summary */}
             <div className="rounded-lg bg-muted/40 px-4 py-3 space-y-1.5 text-sm">
               <p className="font-medium mb-2">Order Summary</p>
-              {cart.map((item) => (
+              {cart.map((item: any) => (
                 <div key={item.key} className="flex justify-between text-muted-foreground">
                   <span>{item.description} × {item.quantity}</span>
                   <span>{fmtPrice(item.unitPrice * item.quantity)}</span>

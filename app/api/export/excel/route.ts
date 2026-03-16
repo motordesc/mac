@@ -25,33 +25,33 @@ export async function GET(request: NextRequest) {
       prisma.expense.findMany({ where: branchWhere, orderBy: { date: "desc" }, take: 2000 }),
     ]);
     const rows = [
-      ...payments.map((p) => ({ Date: p.paidAt.toISOString().slice(0,10), Type: "INCOME", Reference: p.invoice?.invoiceNumber ?? "", Method: p.method, Amount: Number(p.amount) })),
-      ...expenses.map((e) => ({ Date: e.date.toISOString().slice(0,10), Type: "EXPENSE", Reference: e.description ?? "", Method: e.category, Amount: -Number(e.amount) })),
+      ...payments.map((p: any) => ({ Date: p.paidAt.toISOString().slice(0,10), Type: "INCOME", Reference: p.invoice?.invoiceNumber ?? "", Method: p.method, Amount: Number(p.amount) })),
+      ...expenses.map((e: any) => ({ Date: e.date.toISOString().slice(0,10), Type: "EXPENSE", Reference: e.description ?? "", Method: e.category, Amount: -Number(e.amount) })),
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Financial");
   }
 
   async function buildInventorySheet() {
     const items = await prisma.inventoryItem.findMany({ where: branchWhere, orderBy: { name: "asc" }, include: { supplier: { select: { name: true } } } });
-    const rows = items.map((i) => ({ Name: i.name, SKU: i.sku ?? "", Supplier: i.supplier?.name ?? "", Qty: i.quantity, "Min Qty": i.minQuantity, "Low Stock": i.quantity <= i.minQuantity ? "YES" : "no", "Purchase Price": Number(i.purchasePrice), "Selling Price": Number(i.sellingPrice) }));
+    const rows = items.map((i: any) => ({ Name: i.name, SKU: i.sku ?? "", Supplier: i.supplier?.name ?? "", Qty: i.quantity, "Min Qty": i.minQuantity, "Low Stock": i.quantity <= i.minQuantity ? "YES" : "no", "Purchase Price": Number(i.purchasePrice), "Selling Price": Number(i.sellingPrice) }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Inventory");
   }
 
   async function buildStaffSheet() {
     const staff = await prisma.staff.findMany({ where: branchWhere, orderBy: { name: "asc" }, include: { _count: { select: { jobCards: true } }, branch: { select: { name: true } } } });
-    const rows = staff.map((s) => ({ Name: s.name, Role: s.role, Phone: s.phone ?? "", Branch: s.branch?.name ?? "", "Job Cards": s._count.jobCards }));
+    const rows = staff.map((s: any) => ({ Name: s.name, Role: s.role, Phone: s.phone ?? "", Branch: s.branch?.name ?? "", "Job Cards": s._count.jobCards }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Staff");
   }
 
   async function buildJobCardsSheet() {
     const cards = await prisma.jobCard.findMany({ where: branchWhere, orderBy: { createdAt: "desc" }, take: 2000, include: { vehicle: { select: { numberPlate: true, make: true, model: true } }, customer: { select: { name: true, phone: true } }, technician: { select: { name: true } }, branch: { select: { name: true } } } });
-    const rows = cards.map((j) => ({ Created: j.createdAt.toISOString().slice(0,10), Branch: j.branch?.name ?? "", "Vehicle No": j.vehicle.numberPlate, Customer: j.customer.name, Phone: j.customer.phone, Technician: j.technician?.name ?? "", Status: j.status, "Est. Cost": j.estimatedCost ? Number(j.estimatedCost) : "" }));
+    const rows = cards.map((j: any) => ({ Created: j.createdAt.toISOString().slice(0,10), Branch: j.branch?.name ?? "", "Vehicle No": j.vehicle.numberPlate, Customer: j.customer.name, Phone: j.customer.phone, Technician: j.technician?.name ?? "", Status: j.status, "Est. Cost": j.estimatedCost ? Number(j.estimatedCost) : "" }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Job Cards");
   }
 
   async function buildCustomersSheet() {
     const customers = await prisma.customer.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { vehicles: true, jobCards: true } } } });
-    const rows = customers.map((c) => ({ Name: c.name, Phone: c.phone, Address: c.address ?? "", Vehicles: c._count.vehicles, "Job Cards": c._count.jobCards }));
+    const rows = customers.map((c: any) => ({ Name: c.name, Phone: c.phone, Address: c.address ?? "", Vehicles: c._count.vehicles, "Job Cards": c._count.jobCards }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Customers");
   }
 

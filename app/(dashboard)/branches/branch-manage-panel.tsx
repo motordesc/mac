@@ -95,7 +95,7 @@ export function BranchManagePanel({
       if (data.email) fd.set("email", data.email);
       const updated = await updateBranch(editBranch.id, fd);
       setBranches((prev) =>
-        prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b))
+        prev.map((b: any) => (b.id === updated.id ? { ...b, ...updated } : b))
       );
       toast.success("Branch updated");
       setEditBranch(null);
@@ -124,7 +124,7 @@ export function BranchManagePanel({
     try {
       await assignUserToBranch(selectedUserId, assignBranch.id);
       setBranches((prev) =>
-        prev.map((b) =>
+        prev.map((b: any) =>
           b.id === assignBranch.id
             ? { ...b, _count: { ...b._count, userBranches: b._count.userBranches + 1 } }
             : b
@@ -165,7 +165,7 @@ export function BranchManagePanel({
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {branches.map((b) => (
+          {branches.map((b: any) => (
             <Card key={b.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -283,7 +283,7 @@ export function BranchManagePanel({
                   <SelectValue placeholder="Select user to assign" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allUsers.map((u) => (
+                  {allUsers.map((u: any) => (
                     <SelectItem key={u.id} value={u.id}>
                       {u.name ?? u.email ?? u.id}
                       {u.role && (

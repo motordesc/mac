@@ -124,7 +124,7 @@ export default async function InvoiceDetailPage({
               </tr>
             </thead>
             <tbody>
-              {invoice.items.map((item, i) => (
+              {invoice.items.map((item: any, i: number) => (
                 <tr key={item.id} className={`border-b border-border ${i % 2 === 1 ? "bg-muted/30" : ""}`}>
                   <td className="py-2.5">{item.description}</td>
                   <td className="py-2.5 text-right">{item.quantity}</td>
@@ -164,7 +164,7 @@ export default async function InvoiceDetailPage({
             <CardTitle className="text-base">Payment History</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {invoice.payments.map((p) => (
+            {invoice.payments.map((p: any) => (
               <div key={p.id} className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
                   {p.paidAt.toLocaleDateString("en-IN")} · {p.method}

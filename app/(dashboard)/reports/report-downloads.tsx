@@ -79,7 +79,7 @@ export function ReportDownloads({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">All Branches</SelectItem>
-              {branches.map((b) => (
+              {branches.map((b: any) => (
                 <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
               ))}
             </SelectContent>
@@ -88,7 +88,7 @@ export function ReportDownloads({
 
         {/* Report grid */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {REPORT_TYPES.map((report) => (
+          {REPORT_TYPES.map((report: any) => (
             <div
               key={report.value}
               className="flex items-center justify-between rounded-lg border border-border p-3"

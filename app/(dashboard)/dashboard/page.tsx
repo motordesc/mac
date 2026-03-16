@@ -164,8 +164,8 @@ export default async function DashboardPage() {
         GROUP BY day ORDER BY day ASC
       `;
 
-  const revenueMap = new Map(revenueRows.map((r) => [r.day, Number(r.revenue)]));
-  const revenueByDay = last30Days.map((d) => ({
+  const revenueMap = new Map(revenueRows.map((r: any) => [r.day, Number(r.revenue)]));
+  const revenueByDay = last30Days.map((d: any) => ({
     date: d,
     revenue: revenueMap.get(d) ?? 0,
   }));
@@ -178,13 +178,13 @@ export default async function DashboardPage() {
         ...(branchId ? { where: { jobCard: { branchId } } } : {}),
       })
       .then(async (groups) => {
-        const ids = groups.map((g) => g.serviceId);
+        const ids = groups.map((g: any) => g.serviceId);
         const services = await prisma.service.findMany({
           where: { id: { in: ids } },
           select: { id: true, name: true },
         });
-        const map = new Map(services.map((s) => [s.id, s.name]));
-        return groups.map((g) => ({
+        const map = new Map(services.map((s: any) => [s.id, s.name]));
+        return groups.map((g: any) => ({
           name: map.get(g.serviceId) ?? "Unknown",
           count: g._count,
         }));
@@ -199,7 +199,7 @@ export default async function DashboardPage() {
           : {}),
       })
       .then((groups) =>
-        groups.map((g) => ({ type: g.make ?? "Unknown", count: g._count }))
+        groups.map((g: any) => ({ type: g.make ?? "Unknown", count: g._count }))
       ),
 
     prisma.jobCard
@@ -210,14 +210,14 @@ export default async function DashboardPage() {
       })
       .then(async (groups) => {
         const ids = groups
-          .map((g) => g.technicianId)
+          .map((g: any) => g.technicianId)
           .filter(Boolean) as string[];
         const staff = await prisma.staff.findMany({
           where: { id: { in: ids } },
           select: { id: true, name: true },
         });
-        const map = new Map(staff.map((s) => [s.id, s.name]));
-        return groups.map((g) => ({
+        const map = new Map(staff.map((s: any) => [s.id, s.name]));
+        return groups.map((g: any) => ({
           name: g.technicianId
             ? (map.get(g.technicianId) ?? "Unassigned")
             : "Unassigned",

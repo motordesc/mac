@@ -37,7 +37,7 @@ export function AIChat() {
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground">Send a message to get started.</p>
         )}
-        {messages.map((m) => (
+        {messages.map((m: any) => (
           <div
             key={m.id}
             className={`rounded-lg p-3 ${m.role === "user" ? "bg-muted ml-8" : "bg-muted/50 mr-8"}`}

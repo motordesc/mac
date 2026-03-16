@@ -98,10 +98,10 @@ export default async function InvoicesPage({
             <p className="text-sm font-medium text-muted-foreground">No invoices found</p>
           </div>
         ) : (
-          invoices.map((inv) => {
+          invoices.map((inv: any) => {
             const scfg = statusConfig[inv.status] ?? statusConfig.PENDING;
             const StatusIcon = scfg.icon;
-            const totalPaid  = inv.payments.reduce((s, p) => s + Number(p.amount), 0);
+            const totalPaid  = inv.payments.reduce((s: number, p: any) => s + Number(p.amount), 0);
             const balance    = Number(inv.total) - totalPaid;
 
             return (

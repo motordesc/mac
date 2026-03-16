@@ -125,7 +125,7 @@ export default async function JobCardsPage({
             </Button>
           </div>
         ) : (
-          items.map((jc) => {
+          items.map((jc: any) => {
             const scfg = statusConfig[jc.status] ?? statusConfig.OPEN;
             const StatusIcon = scfg.icon;
             const payStatus = jc.invoice?.status;
@@ -133,7 +133,7 @@ export default async function JobCardsPage({
 
             // Compute payment display amount
             const paidAmount = jc.payments.reduce(
-              (sum, p) => sum + Number(p.amount),
+              (sum: number, p: any) => sum + Number(p.amount),
               0
             );
 

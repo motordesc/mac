@@ -222,7 +222,7 @@ export default async function JobCardDetailPage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            {jc.services.map((s) => (
+            {jc.services.map((s: any) => (
               <div key={s.id} className="flex items-center justify-between py-1 border-b border-border last:border-0">
                 <div>
                   <p className="font-medium">{s.service.name}</p>
@@ -231,7 +231,7 @@ export default async function JobCardDetailPage({
                 <p className="font-medium">{formatCurrency(Number(s.unitPrice) * s.quantity)}</p>
               </div>
             ))}
-            {jc.parts.map((p) => (
+            {jc.parts.map((p: any) => (
               <div key={p.id} className="flex items-center justify-between py-1 border-b border-border last:border-0">
                 <div>
                   <p className="font-medium">{p.inventoryItem.name}</p>
@@ -254,7 +254,7 @@ export default async function JobCardDetailPage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            {jc.payments.map((p) => (
+            {jc.payments.map((p: any) => (
               <div key={p.id} className="flex items-center justify-between py-1 border-b border-border last:border-0">
                 <div>
                   <p className="font-medium">{p.method}</p>

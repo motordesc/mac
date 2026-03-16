@@ -114,7 +114,7 @@ export function StaffManager({ staff, isAdmin }: { staff: StaffMember[]; isAdmin
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {STAFF_ROLES.map((r) => (
+                      {STAFF_ROLES.map((r: any) => (
                         <SelectItem key={r.value} value={r.value}>
                           {r.label}
                         </SelectItem>
@@ -144,7 +144,7 @@ export function StaffManager({ staff, isAdmin }: { staff: StaffMember[]; isAdmin
         <p className="py-8 text-center text-muted-foreground">No staff added yet.</p>
       ) : (
         <div className="space-y-3">
-          {staff.map((s) => (
+          {staff.map((s: any) => (
             <div
               key={s.id}
               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-4"

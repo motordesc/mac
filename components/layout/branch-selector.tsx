@@ -145,7 +145,7 @@ export function BranchSelector({
           <SelectItem value="__all__">
             <span className="font-medium">All Branches</span>
           </SelectItem>
-          {branches.map((b) => (
+          {branches.map((b: any) => (
             <SelectItem key={b.id} value={b.id}>
               {b.name}
             </SelectItem>

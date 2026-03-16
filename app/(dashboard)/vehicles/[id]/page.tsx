@@ -44,7 +44,7 @@ export default async function VehicleDetailPage({
             <p className="text-muted-foreground">No job cards yet.</p>
           ) : (
             <ul className="space-y-2">
-              {vehicle.jobCards.map((jc) => (
+              {vehicle.jobCards.map((jc: any) => (
                 <li key={jc.id}>
                   <Link href={`/jobcards/${jc.id}`} className="font-medium text-primary hover:underline">
                     {formatDate(jc.createdAt)}

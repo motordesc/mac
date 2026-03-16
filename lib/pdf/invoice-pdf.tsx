@@ -162,7 +162,7 @@ export function InvoicePdfDocument({ data }: { data: InvoiceData }) {
           <Text style={[styles.tableHeaderText, styles.colRate]}>Rate</Text>
           <Text style={[styles.tableHeaderText, styles.colAmt]}>Amount</Text>
         </View>
-        {data.items.map((item, i) => (
+        {data.items.map((item: any, i: number) => (
           <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
             <Text style={styles.colDesc}>{item.description}</Text>
             <Text style={[{ fontSize: 10 }, styles.colQty]}>{item.quantity}</Text>

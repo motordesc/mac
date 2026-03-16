@@ -58,7 +58,7 @@ export async function GET(
     customerPhone: invoice.customer.phone,
     customerAddress: invoice.customer.address ?? undefined,
     vehicleNumber: invoice.jobCard?.vehicle?.numberPlate,
-    items: invoice.items.map((i) => ({
+    items: invoice.items.map((i: any) => ({
       description: i.description,
       quantity: i.quantity,
       unitPrice: i.unitPrice,
@@ -70,13 +70,18 @@ export async function GET(
     taxRate,
   };
 
-  const stream = await renderToStream(React.createElement(InvoicePdfDocument, { data }));
-  const buffer = await streamToBuffer(stream as Readable);
+  try {
+    const stream = await renderToStream(React.createElement(InvoicePdfDocument, { data }));
+    const buffer = await streamToBuffer(stream as Readable);
 
-  return new NextResponse(buffer, {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="invoice-${invoice.invoiceNumber}.pdf"`,
-    },
-  });
+    return new NextResponse(buffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="invoice-${invoice.invoiceNumber}.pdf"`,
+      },
+    });
+  } catch (err) {
+    console.error("PDF generation failed:", err);
+    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
+  }
 }

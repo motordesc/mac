@@ -46,7 +46,7 @@ export default async function InventoryPage({
             </p>
           ) : (
             <div className="space-y-3">
-              {items.map((item) => (
+              {items.map((item: any) => (
                 <div
                   key={item.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-4"

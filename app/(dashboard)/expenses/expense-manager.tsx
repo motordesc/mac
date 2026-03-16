@@ -48,24 +48,26 @@ export function ExpenseManager({
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<CreateExpenseInput>({
-    resolver: zodResolver(createExpenseSchema),
+    resolver: zodResolver(createExpenseSchema) as any,
     defaultValues: { category: "OTHER", amount: 0, date: new Date(), description: "" },
   });
 
   async function onSubmit(data: CreateExpenseInput) {
-    try {
-      const fd = new FormData();
-      fd.set("category", data.category);
-      fd.set("amount", String(data.amount));
-      fd.set("date", new Date(data.date).toISOString());
-      if (data.description) fd.set("description", data.description);
-      await createExpense(fd);
-      toast.success("Expense recorded");
-      form.reset();
-      setOpen(false);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to save expense");
-    }
+    startTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.set("category", data.category);
+        fd.set("amount", String(data.amount));
+        fd.set("date", new Date(data.date).toISOString());
+        if (data.description) fd.set("description", data.description);
+        await createExpense(fd);
+        toast.success("Expense recorded");
+        form.reset();
+        setOpen(false);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to save expense");
+      }
+    });
   }
 
   function handleDelete(id: string) {
@@ -93,7 +95,7 @@ export function ExpenseManager({
         {canManage && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" disabled={isPending}>
                 <Plus className="mr-2 size-4" />
                 Add Expense
               </Button>
@@ -136,17 +138,23 @@ export function ExpenseManager({
                 <div className="space-y-2">
                   <Label>Date</Label>
                   <Input type="date" {...form.register("date")} />
+                  {form.formState.errors.date && (
+                    <p className="text-sm text-destructive">{form.formState.errors.date.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Description</Label>
                   <Textarea {...form.register("description")} className="min-h-[60px]" />
+                  {form.formState.errors.description && (
+                    <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+                  )}
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting ? "Saving…" : "Save Expense"}
+                  <Button type="submit" disabled={isPending}>
+                    {isPending ? "Saving…" : "Save Expense"}
                   </Button>
                 </div>
               </form>
@@ -171,7 +179,7 @@ export function ExpenseManager({
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-medium">{formatCurrency(e.amount)}</span>
+                <span className="font-medium">{formatCurrency(Number(e.amount))}</span>
                 {canManage && (
                   <Button
                     variant="ghost"

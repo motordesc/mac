@@ -55,7 +55,7 @@ export default async function CustomerDetailPage({
             <p className="text-muted-foreground">No vehicles. Add one from the Vehicles section.</p>
           ) : (
             <ul className="space-y-2">
-              {customer.vehicles.map((v) => (
+              {customer.vehicles.map((v: any) => (
                 <li key={v.id}>
                   <Link
                     href={`/vehicles/${v.id}`}
@@ -82,7 +82,7 @@ export default async function CustomerDetailPage({
             <p className="text-muted-foreground">No job cards yet.</p>
           ) : (
             <ul className="space-y-2">
-              {customer.jobCards.map((jc) => (
+              {customer.jobCards.map((jc: any) => (
                 <li key={jc.id}>
                   <Link
                     href={`/jobcards/${jc.id}`}

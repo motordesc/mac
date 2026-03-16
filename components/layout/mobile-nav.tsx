@@ -86,7 +86,7 @@ export function MobileNav() {
 
         {/* Grid of menu items */}
         <div className="grid grid-cols-3 gap-1 p-3">
-          {menuItems.map((item) => {
+          {menuItems.map((item: any) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -115,7 +115,7 @@ export function MobileNav() {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex items-center justify-around h-16">
-          {primaryNavItems.map((item) => {
+          {primaryNavItems.map((item: any) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (

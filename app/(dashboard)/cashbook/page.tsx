@@ -140,7 +140,7 @@ export default async function CashbookPage({
               <p className="text-sm text-muted-foreground">No payments today.</p>
             ) : (
               <div className="space-y-2">
-                {paymentRows.map((p) => (
+                {paymentRows.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between text-sm">
                     <div>
                       <span className="font-medium">{p.method}</span>
@@ -169,7 +169,7 @@ export default async function CashbookPage({
               <p className="text-sm text-muted-foreground">No expenses today.</p>
             ) : (
               <div className="space-y-2">
-                {expenseRows.map((e) => (
+                {expenseRows.map((e: any) => (
                   <div key={e.id} className="flex items-center justify-between text-sm">
                     <div>
                       <span className="font-medium">{e.category}</span>

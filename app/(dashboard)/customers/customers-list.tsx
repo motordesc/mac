@@ -73,7 +73,7 @@ export function CustomersList({
         </Button>
       </form>
       <div className="space-y-3">
-        {customers.map((c) => (
+        {customers.map((c: any) => (
           <Link
             key={c.id}
             href={`/customers/${c.id}`}

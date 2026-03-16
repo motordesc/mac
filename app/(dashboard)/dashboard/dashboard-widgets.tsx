@@ -111,7 +111,7 @@ function QuickActionButton({ action }: { action: QuickAction }) {
 export function DashboardWidgets({ widgets }: { widgets: Widget[] }) {
   return (
     <div className="grid gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-      {widgets.map((w) => (
+      {widgets.map((w: any) => (
         <WidgetCard key={w.title} widget={w} />
       ))}
     </div>
@@ -132,7 +132,7 @@ export function QuickActions() {
         Quick Actions
       </h2>
       <div className="grid grid-cols-4 gap-3 sm:grid-cols-4">
-        {actions.map((a) => (
+        {actions.map((a: any) => (
           <QuickActionButton key={a.href} action={a} />
         ))}
       </div>

@@ -49,7 +49,7 @@ export function JobCardForm({
 }) {
   const router = useRouter();
   const form   = useForm<CreateJobCardInput>({
-    resolver: zodResolver(createJobCardSchema),
+    resolver: zodResolver(createJobCardSchema) as any,
     defaultValues: {
       customerId:    initialCustomerId ?? "",
       vehicleId:     initialVehicleId  ?? "",
@@ -133,7 +133,7 @@ export function JobCardForm({
                 <SelectValue placeholder="Select customer…" />
               </SelectTrigger>
               <SelectContent>
-                {customers.map((c) => (
+                {customers.map((c: any) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
                     <span className="ml-2 text-xs text-muted-foreground">
@@ -172,7 +172,7 @@ export function JobCardForm({
                 />
               </SelectTrigger>
               <SelectContent>
-                {filteredVehicles.map((v) => (
+                {filteredVehicles.map((v: any) => (
                   <SelectItem key={v.id} value={v.id}>
                     <span className="flex items-center gap-2">
                       <Car className="size-3.5 text-muted-foreground" />
@@ -216,7 +216,7 @@ export function JobCardForm({
                 <SelectValue placeholder="Assign technician (optional)" />
               </SelectTrigger>
               <SelectContent>
-                {staff.map((s) => (
+                {staff.map((s: any) => (
                   <SelectItem key={s.id} value={s.id}>
                     <span className="flex items-center gap-2">
                       <Wrench className="size-3.5 text-muted-foreground" />

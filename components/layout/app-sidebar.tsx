@@ -80,13 +80,13 @@ export function AppSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-        {navGroups.map((group) => (
+        {navGroups.map((group: any) => (
           <div key={group.label}>
             <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               {group.label}
             </p>
             <div className="space-y-0.5">
-              {group.items.map((item) => {
+              {group.items.map((item: any) => {
                 const Icon = item.icon;
                 const isActive =
                   pathname === item.href || pathname.startsWith(item.href + "/");

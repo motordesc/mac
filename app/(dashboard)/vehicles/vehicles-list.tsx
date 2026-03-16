@@ -100,7 +100,7 @@ export function VehiclesList({
         </div>
       ) : (
         <div className="space-y-2">
-          {vehicles.map((v) => {
+          {vehicles.map((v: any) => {
             const latest = v.jobCards?.[0];
             const jsCfg  = latest ? jobStatusBadge[latest.status] : null;
             const payCfg = latest?.invoice

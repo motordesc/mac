@@ -106,7 +106,7 @@ export default async function ReportsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" role="region" aria-label="Key Performance Indicators">
         {[
           { label: "Open Job Cards", value: openJobCards },
           { label: "Completed (all time)", value: completedJobCards },
@@ -116,7 +116,7 @@ export default async function ReportsPage() {
           <Card key={stat.label}>
             <CardContent className="pb-4 pt-5">
               <p className="text-sm text-muted-foreground">{stat.label}</p>
-              <p className={`text-2xl font-bold ${stat.warn ? "text-destructive" : ""}`}>
+              <p className={`text-2xl font-bold ${stat.warn ? "text-destructive" : ""}`} aria-live="polite">
                 {stat.value}
               </p>
             </CardContent>
@@ -159,7 +159,7 @@ export default async function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {topStaff.map((s, i) => (
+              {topStaff.map((s: any, i: number) => (
                 <div key={s.name} className="flex items-center gap-3 text-sm">
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                     {i + 1}
