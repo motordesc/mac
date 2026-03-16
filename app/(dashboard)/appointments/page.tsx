@@ -66,7 +66,7 @@ export default async function AppointmentsPage({
             <p className="py-8 text-center text-muted-foreground">No appointments found.</p>
           ) : (
             <div className="space-y-3">
-              {items.map((a) => (
+              {items.map((a: any) => (
                 <div
                   key={a.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-4"
