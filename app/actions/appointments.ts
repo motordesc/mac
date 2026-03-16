@@ -63,10 +63,21 @@ export async function createAppointment(formData: FormData) {
   return created;
 }
 
+const VALID_APPOINTMENT_STATUSES = ["SCHEDULED", "CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"] as const;
+type AppointmentStatusValue = (typeof VALID_APPOINTMENT_STATUSES)[number];
+
 export async function updateAppointmentStatus(id: string, status: string) {
   await requireRole(["Admin", "Manager"]);
   const safeId = validateId(id);
-  const updated = await prisma.appointment.update({ where: { id: safeId }, data: { status } });
+
+  if (!VALID_APPOINTMENT_STATUSES.includes(status as AppointmentStatusValue)) {
+    throw new Error(`Invalid status. Must be one of: ${VALID_APPOINTMENT_STATUSES.join(", ")}`);
+  }
+
+  const updated = await prisma.appointment.update({
+    where: { id: safeId },
+    data: { status: status as AppointmentStatusValue },
+  });
   revalidatePath("/appointments");
   return updated;
 }

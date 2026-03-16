@@ -146,6 +146,8 @@ export async function setSelectedBranch(branchId: string | null) {
   const cookieStore = await cookies();
 
   if (branchId) {
+    validateId(branchId);
+
     // Validate that the branch actually exists
     const branch = await prisma.branch.findUnique({
       where: { id: branchId, isActive: true },

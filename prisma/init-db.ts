@@ -1,19 +1,21 @@
+/**
+ * Initialize Database (Development Only)
+ *
+ * ⚠️ WARNING: This script uses `prisma db push` which is for DEVELOPMENT ONLY.
+ * For production deployments, use `prisma migrate deploy` instead.
+ *
+ * The build script (`pnpm build`) uses `prisma migrate deploy` automatically.
+ * This script is kept for local development convenience.
+ */
+
 import { execSync } from "child_process";
 
-async function main() {
-  console.log("🚀 Initializing database setup...");
+console.log("🔧 Pushing schema to database (development mode)...");
 
-  try {
-    // 1. Push schema to database (best for Vercel/Serverless during init)
-    // This ensures tables exist without needing manual migration management in some environments
-    console.log("📤 Pushing database schema...");
-    execSync("pnpm prisma db push --accept-data-loss", { stdio: "inherit" });
-
-    console.log("✅ Database initialized successfully!");
-  } catch (error) {
-    console.error("❌ Database initialization failed:", error);
-    process.exit(1);
-  }
+try {
+  execSync("pnpm prisma db push", { stdio: "inherit" });
+  console.log("✅ Database schema synchronized.");
+} catch (error) {
+  console.error("❌ Database push failed:", error);
+  process.exit(1);
 }
-
-main();

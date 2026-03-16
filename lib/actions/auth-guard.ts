@@ -1,25 +1,21 @@
 "use server";
 
+/**
+ * Auth guard utilities for server actions.
+ *
+ * Re-exports core auth functions from lib/auth.ts with the "use server" directive
+ * so they can be directly used in server action files.
+ *
+ * This avoids duplicating auth logic between lib/auth.ts and this file.
+ */
+
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import type { AppRole } from "@/lib/constants";
+import { isSuperAdmin } from "@/lib/auth";
 
-/**
- * Returns true if the currently signed-in Clerk user's primary email
- * matches the SUPER_ADMIN_EMAIL environment variable.
- *
- * Super admins bypass all role checks and are auto-provisioned in the DB.
- * Set SUPER_ADMIN_EMAIL in your .env.local to designate the super admin.
- */
-export async function isSuperAdmin(): Promise<boolean> {
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-  if (!superAdminEmail) return false;
-  const clerkUser = await currentUser();
-  if (!clerkUser) return false;
-  return clerkUser.emailAddresses.some(
-    (e) => e.emailAddress.toLowerCase() === superAdminEmail.toLowerCase()
-  );
-}
+// Re-export isSuperAdmin for direct use in server actions
+export { isSuperAdmin };
 
 /**
  * Ensures the caller is authenticated AND has a provisioned DB account.
@@ -40,8 +36,6 @@ export async function requireAuthenticatedUser() {
       include: { role: true },
     });
     if (!user) {
-      // Should not happen because getCurrentUser() auto-provisions super admins,
-      // but guard here just in case.
       throw new Error(
         "Super admin account not yet provisioned. Please visit the dashboard first to initialize."
       );

@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentRole } from "@/lib/auth";
 import * as XLSX from "xlsx";
 
 export async function GET(request: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const role = await getCurrentRole();
+  if (!role || !["Admin", "Manager"].includes(role)) {
+    return NextResponse.json({ error: "Forbidden: Admin or Manager role required" }, { status: 403 });
+  }
 
   const type = request.nextUrl.searchParams.get("type") ?? "financial";
   const branchId = request.nextUrl.searchParams.get("branchId") ?? undefined;

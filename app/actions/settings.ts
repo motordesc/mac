@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireRole, requireAuthenticatedUser } from "@/lib/actions/auth-guard";
 import { z } from "zod";
+import type { GarageSettings } from "@prisma/client";
 
 const settingsSchema = z.object({
   garage_name: z.string().min(1, "Garage name is required").max(100),
@@ -14,8 +15,8 @@ export async function getGarageSettings() {
   await requireAuthenticatedUser();
   const settings = await prisma.garageSettings.findMany();
   return {
-    garageName: settings.find((s) => s.key === "garage_name")?.value ?? "Motor Auto Care",
-    taxRate: settings.find((s) => s.key === "tax_rate")?.value ?? "18",
+    garageName: settings.find((s: GarageSettings) => s.key === "garage_name")?.value ?? "Motor Auto Care",
+    taxRate: settings.find((s: GarageSettings) => s.key === "tax_rate")?.value ?? "18",
   };
 }
 

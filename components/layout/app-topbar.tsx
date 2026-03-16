@@ -2,7 +2,7 @@
 
 import { UserButton } from "@clerk/nextjs";
 import { BranchSelector } from "@/components/layout/branch-selector";
-import { Bell, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 
 type Branch = { id: string; name: string };
 

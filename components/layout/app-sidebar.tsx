@@ -65,6 +65,9 @@ const navGroups = [
   },
 ] as const;
 
+type NavGroup = (typeof navGroups)[number];
+type NavItem = NavGroup["items"][number];
+
 export function AppSidebar() {
   const pathname = usePathname();
 
@@ -80,13 +83,13 @@ export function AppSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-        {navGroups.map((group: any) => (
+        {navGroups.map((group: NavGroup) => (
           <div key={group.label}>
             <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               {group.label}
             </p>
             <div className="space-y-0.5">
-              {group.items.map((item: any) => {
+              {group.items.map((item: NavItem) => {
                 const Icon = item.icon;
                 const isActive =
                   pathname === item.href || pathname.startsWith(item.href + "/");

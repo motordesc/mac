@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { ClerkProvider } from "@clerk/nextjs";
 import { getCurrentUser, getCurrentRole } from "@/lib/auth";
 import { getSelectedBranchId } from "@/lib/branch";
 import { prisma } from "@/lib/prisma";
@@ -26,22 +25,21 @@ export default async function DashboardLayout({
   ]);
 
   return (
-    <ClerkProvider>
-      <div className="flex min-h-screen flex-col bg-background">
-        <AppSidebar />
-        <div className="flex flex-1 flex-col md:pl-64">
-          <AppTopbar
-            branches={branches}
-            selectedBranchId={selectedBranchId}
-            isAdmin={role === "Admin"}
-          />
-          {/* pb-20 on mobile gives space above the bottom nav bar */}
-          <main className="flex-1 p-4 pb-24 md:pb-6 max-w-7xl mx-auto w-full">
-            {children}
-          </main>
-        </div>
-        <MobileNav />
+    <div className="flex min-h-screen flex-col bg-background">
+      <AppSidebar />
+      <div className="flex flex-1 flex-col md:pl-64">
+        <AppTopbar
+          branches={branches}
+          selectedBranchId={selectedBranchId}
+          isAdmin={role === "Admin"}
+        />
+        {/* pb-20 on mobile gives space above the bottom nav bar */}
+        <main className="flex-1 p-4 pb-24 md:pb-6 max-w-7xl mx-auto w-full">
+          {children}
+        </main>
       </div>
-    </ClerkProvider>
+      <MobileNav />
+    </div>
   );
 }
+
