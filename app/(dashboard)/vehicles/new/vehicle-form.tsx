@@ -11,12 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { z } from "zod";
 
 type Customer = { id: string; name: string; phone: string };
 
 export function VehicleForm({ customers }: { customers: Customer[] }) {
   const router = useRouter();
-  const form = useForm<CreateVehicleInput>({
+  const form = useForm<z.input<typeof createVehicleSchema>, unknown, CreateVehicleInput>({
     resolver: zodResolver(createVehicleSchema),
     defaultValues: { numberPlate: "", make: "", model: "", year: undefined, vin: "" },
   });
