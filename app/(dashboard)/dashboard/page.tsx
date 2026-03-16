@@ -42,7 +42,7 @@ export default async function DashboardPage() {
     revenueRows,
   ] = await Promise.all([
     branchId
-      ? prisma.branch.findUnique({ where: { id: branchId }, select: { name: true } }).then((b) => b?.name)
+      ? prisma.branch.findUnique({ where: { id: branchId }, select: { name: true } }).then((b: { name: string } | null) => b?.name)
       : Promise.resolve(null),
     prisma.jobCard.count({ where: { ...branchWhere, status: "OPEN" } }),
     prisma.jobCard.count({ where: { ...branchWhere, status: "IN_PROGRESS" } }),
@@ -76,11 +76,11 @@ export default async function DashboardPage() {
       ? prisma.$queryRaw<[{ count: bigint }]>`
           SELECT COUNT(*)::bigint AS count FROM "InventoryItem"
           WHERE quantity <= "minQuantity" AND "branchId" = ${branchId}
-        `.then((r) => Number(r[0].count))
+        `.then((r: [{ count: bigint }]) => Number(r[0].count))
       : prisma.$queryRaw<[{ count: bigint }]>`
           SELECT COUNT(*)::bigint AS count FROM "InventoryItem"
           WHERE quantity <= "minQuantity"
-        `.then((r) => Number(r[0].count)),
+        `.then((r: [{ count: bigint }]) => Number(r[0].count)),
     branchId
       ? prisma.$queryRaw<Array<{ day: string; revenue: number }>>`
           SELECT TO_CHAR("paidAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day,
@@ -162,7 +162,7 @@ export default async function DashboardPage() {
     },
   ];
 
-  const revenueMap = new Map(revenueRows.map((r) => [r.day, Number(r.revenue)]));
+  const revenueMap = new Map(revenueRows.map((r: { day: string; revenue: number }) => [r.day, Number(r.revenue)]));
   const revenueByDay = last30Days.map((d) => ({
     date: d,
     revenue: revenueMap.get(d) ?? 0,
@@ -175,14 +175,14 @@ export default async function DashboardPage() {
         _count: true,
         ...(branchId ? { where: { jobCard: { branchId } } } : {}),
       })
-      .then(async (groups) => {
-        const ids = groups.map((g) => g.serviceId);
+      .then(async (groups: Array<{ serviceId: string; _count: number }>) => {
+        const ids = groups.map((g: { serviceId: string }) => g.serviceId);
         const services = await prisma.service.findMany({
           where: { id: { in: ids } },
           select: { id: true, name: true },
         });
-        const map = new Map(services.map((s) => [s.id, s.name]));
-        return groups.map((g) => ({
+        const map = new Map(services.map((s: { id: string; name: string }) => [s.id, s.name]));
+        return groups.map((g: { serviceId: string; _count: number }) => ({
           name: map.get(g.serviceId) ?? "Unknown",
           count: g._count,
         }));
@@ -196,8 +196,8 @@ export default async function DashboardPage() {
           ? { where: { jobCards: { some: { branchId } } } }
           : {}),
       })
-      .then((groups) =>
-        groups.map((g) => ({ type: g.make ?? "Unknown", count: g._count }))
+      .then((groups: Array<{ make: string | null; _count: number }>) =>
+        groups.map((g: { make: string | null; _count: number }) => ({ type: g.make ?? "Unknown", count: g._count }))
       ),
 
     prisma.jobCard
@@ -206,16 +206,16 @@ export default async function DashboardPage() {
         where: { ...branchWhere, status: "CLOSED" },
         _count: true,
       })
-      .then(async (groups) => {
+      .then(async (groups: Array<{ technicianId: string | null; _count: number }>) => {
         const ids = groups
-          .map((g) => g.technicianId)
+          .map((g: { technicianId: string | null }) => g.technicianId)
           .filter(Boolean) as string[];
         const staff = await prisma.staff.findMany({
           where: { id: { in: ids } },
           select: { id: true, name: true },
         });
-        const map = new Map(staff.map((s) => [s.id, s.name]));
-        return groups.map((g) => ({
+        const map = new Map(staff.map((s: { id: string; name: string }) => [s.id, s.name]));
+        return groups.map((g: { technicianId: string | null; _count: number }) => ({
           name: g.technicianId
             ? (map.get(g.technicianId) ?? "Unassigned")
             : "Unassigned",

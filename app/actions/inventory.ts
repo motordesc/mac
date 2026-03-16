@@ -55,7 +55,7 @@ export async function getInventoryItems(params: {
       `,
     ]);
     const total = Number(countResult[0].count);
-    const shaped = items.map((i) => ({
+    const shaped = items.map((i: { supplier_name: any; }) => ({
       ...i,
       supplier: i.supplier_name ? { name: i.supplier_name } : null,
     }));

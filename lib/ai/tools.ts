@@ -75,7 +75,7 @@ export const getCustomerData = tool({
     });
     return { count: customers.length, customers };
   },
-})
+});
 
 export const getJobCardSummary = tool({
   description: "Get job card counts and recent cards. Optionally filter by branch or status.",
@@ -124,7 +124,7 @@ export const getBranchOverview = tool({
 export const getBusinessInsights = tool({
   description: "Get a business health summary to help grow the business. Covers open jobs, completions, unpaid invoices, low stock, and top services.",
   parameters: z.object({ branchId: z.string().optional() }),
-  execute: async ({ branchId }: { branchId?: string }) => {
+  execute: async ({ branchId }) => {
     const now = new Date();
     const bw = branchId ? { branchId } : {};
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

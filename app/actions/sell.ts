@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/actions/auth-guard";
 import { getAuthorizedBranchId } from "@/lib/branch";
 import { z } from "zod";
-import { crypto } from "crypto";
 
 const saleItemSchema = z.object({
   type: z.enum(["SERVICE", "PART"]),
@@ -76,7 +75,7 @@ export async function processQuickSale(data: QuickSaleInput) {
     });
 
     for (const item of partItems) {
-      const stock = stockLevels.find(s => s.id === item.refId);
+      const stock = stockLevels.find((s: { id: string; quantity: number; name: string }) => s.id === item.refId);
       if (!stock || stock.quantity < item.quantity) {
         throw new Error(`Insufficient stock for ${stock?.name || "item"}. Available: ${stock?.quantity || 0}, Required: ${item.quantity}`);
       }
@@ -92,7 +91,7 @@ export async function processQuickSale(data: QuickSaleInput) {
     throw new Error("Provide an existing vehicle or enter a number plate.");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: { customer: { findFirst: (arg0: { where: { phone: string; }; select: { id: boolean; }; }) => any; create: (arg0: { data: { name: string; phone: string; address: string | undefined; }; }) => any; }; vehicle: { findFirst: (arg0: { where: { numberPlate: { equals: string; mode: string; }; }; select: { id: boolean; }; }) => any; create: (arg0: { data: { customerId: string | undefined; numberPlate: string; make: string | undefined; model: string | undefined; year: number | undefined; }; }) => any; }; jobCard: { create: (arg0: { data: { branchId: string; vehicleId: string | undefined; customerId: string | undefined; technicianId: string | undefined; status: string; notes: string | undefined; }; }) => any; }; jobCardService: { upsert: (arg0: { where: { jobCardId_serviceId: { jobCardId: any; serviceId: string; }; }; create: { jobCardId: any; serviceId: string; quantity: number; unitPrice: number; completed: boolean; }; update: { quantity: number; unitPrice: number; }; }) => any; }; jobCardPart: { create: (arg0: { data: { jobCardId: any; inventoryItemId: string; quantity: number; unitPrice: number; }; }) => any; }; inventoryItem: { update: (arg0: { where: { id: string; }; data: { quantity: { decrement: number; }; }; }) => any; }; inventoryTransaction: { create: (arg0: { data: { inventoryItemId: string; quantity: number; type: string; jobCardId: any; }; }) => any; }; invoice: { findUnique: (arg0: { where: { invoiceNumber: string; }; select: { id: boolean; }; }) => any; create: (arg0: { data: { branchId: string; customerId: string | undefined; jobCardId: any; invoiceNumber: string; subtotal: number; tax: number; total: number; status: string; items: { create: { description: string; quantity: number; unitPrice: number; type: "SERVICE" | "PART"; }[]; }; }; }) => any; }; payment: { create: (arg0: { data: { branchId: string; invoiceId: any; jobCardId: any; amount: number; method: "CASH" | "CARD" | "UPI" | "BANK_TRANSFER" | "OTHER"; }; }) => any; }; }) => {
     // ── 1. Customer ────────────────────────────────────────────────────
     let customerId = d.customerId;
     if (!customerId) {

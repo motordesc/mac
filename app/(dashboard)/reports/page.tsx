@@ -26,7 +26,7 @@ export default async function ReportsPage() {
     inventoryAlerts,
   ] = await Promise.all([
     branchId
-      ? prisma.branch.findUnique({ where: { id: branchId }, select: { name: true } }).then((b) => b?.name ?? "Branch")
+      ? prisma.branch.findUnique({ where: { id: branchId }, select: { name: true } }).then((b: { name: string } | null) => b?.name ?? "Branch")
       : Promise.resolve(null),
     prisma.payment.aggregate({ where: { ...branchWhere, paidAt: { gte: todayStart } }, _sum: { amount: true } }),
     prisma.payment.aggregate({ where: { ...branchWhere, paidAt: { gte: weekStart } }, _sum: { amount: true } }),
@@ -41,11 +41,11 @@ export default async function ReportsPage() {
         orderBy: { _count: { technicianId: "desc" } },
         take: 5,
       })
-      .then(async (groups) => {
-        const ids = groups.map((g) => g.technicianId).filter(Boolean) as string[];
+      .then(async (groups: Array<{ technicianId: string | null; _count: number }>) => {
+        const ids = groups.map((g: { technicianId: string | null }) => g.technicianId).filter(Boolean) as string[];
         const staff = await prisma.staff.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
-        const map = new Map(staff.map((s) => [s.id, s.name]));
-        return groups.map((g) => ({
+        const map = new Map(staff.map((s: { id: string; name: string }) => [s.id, s.name]));
+        return groups.map((g: { technicianId: string | null; _count: number }) => ({
           name: g.technicianId ? (map.get(g.technicianId) ?? "Unassigned") : "Unassigned",
           closed: g._count,
         }));
@@ -54,7 +54,7 @@ export default async function ReportsPage() {
     prisma.jobCard.count({ where: { ...branchWhere, status: { in: ["COMPLETED", "CLOSED"] } } }),
     prisma.$queryRaw<[{ count: bigint }]>`
       SELECT COUNT(*)::bigint AS count FROM "InventoryItem" WHERE quantity <= "minQuantity"
-    `.then((r) => Number(r[0].count)),
+    `.then((r: [{ count: bigint }]) => Number(r[0].count)),
   ]);
 
   const branches = await prisma.branch.findMany({
