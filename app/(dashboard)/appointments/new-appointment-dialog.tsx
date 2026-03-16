@@ -40,7 +40,12 @@ export function NewAppointmentDialog({
 
   const form = useForm<CreateAppointmentInput>({
     resolver: zodResolver(createAppointmentSchema),
-    defaultValues: { customerId: "", vehicleId: null, notes: "" },
+    defaultValues: {
+      customerId: "",
+      vehicleId: null,
+      scheduledAt: new Date().toISOString().slice(0, 16) as unknown as Date,
+      notes: "",
+    },
   });
 
   const selectedCustomerId = form.watch("customerId");
