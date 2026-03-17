@@ -1,52 +1,80 @@
 /**
- * Setup Database Script
+ * scripts/setup-database.ts
+ * ─────────────────────────
+ * Runs during Vercel build to push the Prisma schema to the database.
+ * Compatible with any PostgreSQL provider (NeonDB, Nile, Supabase, Railway, etc.)
  *
- * Run this script to initialize or migrate the database for a new environment.
- * It uses `prisma migrate deploy` (production-safe) instead of `db push --accept-data-loss`.
- *
- * Usage:
- *   pnpm db:setup
- *
- * What it does:
- *   1. Generates the Prisma client
- *   2. Applies all pending migrations (safe — never drops data)
- *   3. Optionally seeds the database with initial data
- *
- * For development schema changes, use `pnpm db:migrate` instead (creates new migration files).
+ * Retries up to 3 times with delays to handle cold-starting serverless databases.
+ * Exits with code 1 on permanent failure so Vercel surfaces the error.
  */
 
-import { execSync } from "child_process";
+import { execSync } from "child_process"
 
-function run(cmd: string, label: string) {
-  console.log(`\n🔧 ${label}...`);
+const DATABASE_URL =
+  process.env.DATABASE_URL?.trim() ||
+  process.env.POSTGRES_URL?.trim() ||
+  process.env.POSTGRES_PRISMA_URL?.trim()
+
+const MAX_RETRIES = 3
+const RETRY_DELAY_MS = 5_000
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function pushSchema(attempt: number): Promise<boolean> {
+  console.log(`[setup-database] prisma db push — attempt ${attempt}/${MAX_RETRIES}`)
   try {
-    execSync(cmd, { stdio: "inherit" });
-    console.log(`✅ ${label} — done`);
-  } catch (error) {
-    console.error(`❌ ${label} — failed`);
-    process.exit(1);
+    execSync("npx prisma db push --accept-data-loss", {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        DATABASE_URL: DATABASE_URL,
+      },
+    })
+    return true
+  } catch {
+    return false
   }
 }
 
 async function main() {
-  console.log("━━━ Motor Auto Care — Database Setup ━━━\n");
+  console.log("[setup-database] Starting database schema sync...")
 
-  // Step 1: Generate Prisma client
-  run("pnpm prisma generate", "Generating Prisma client");
-
-  // Step 2: Apply pending migrations (production-safe)
-  run("pnpm prisma migrate deploy", "Applying database migrations");
-
-  // Step 3: Seed database (optional — only if seed data doesn't exist)
-  const shouldSeed = process.argv.includes("--seed");
-  if (shouldSeed) {
-    run("pnpm db:seed", "Seeding database with initial data");
+  if (!DATABASE_URL) {
+    console.error(
+      "[setup-database] ❌ No database URL found.\n" +
+        "  Set DATABASE_URL (or POSTGRES_URL / POSTGRES_PRISMA_URL) in your\n" +
+        "  Vercel project environment variables and redeploy."
+    )
+    process.exit(1)
   }
 
-  console.log("\n━━━ Database setup complete ━━━");
-  if (!shouldSeed) {
-    console.log("💡 To seed the database, run: pnpm db:setup -- --seed");
+  const maskedUrl = DATABASE_URL.replace(/:([^@]+)@/, ":****@")
+  console.log(`[setup-database] Using DB: ${maskedUrl}`)
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const ok = await pushSchema(attempt)
+    if (ok) {
+      console.log("[setup-database] ✅ Schema push successful!")
+      process.exit(0)
+    }
+
+    if (attempt < MAX_RETRIES) {
+      console.log(
+        `[setup-database] ⚠️  Attempt ${attempt} failed. ` +
+          `Retrying in ${RETRY_DELAY_MS / 1000}s...`
+      )
+      await sleep(RETRY_DELAY_MS)
+    }
   }
+
+  console.error(
+    `[setup-database] ❌ Schema push failed after ${MAX_RETRIES} attempts.\n` +
+      "  Check your DATABASE_URL and that your database is accessible.\n" +
+      "  You can also run scripts/init-database.sql directly in your DB's SQL editor."
+  )
+  process.exit(1)
 }
 
-main();
+main()
