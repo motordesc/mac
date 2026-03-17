@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 async function main() {
   // ── Roles ──────────────────────────────────────────────────────────────
@@ -17,10 +15,10 @@ async function main() {
     where: { id: "default-branch-id" }, // Using a fixed ID for idempotency in seed
     update: {},
     create: {
-      id: "default-branch-id",
-      name: "Main Branch",
-      address: "123 Main St, Bengaluru",
-      phone: "+91 98765 43210"
+      id: "mac-jangiganj",
+      name: "Jangiganj Branch",
+      address: "Opposite Ramdev PG College, Sufinagar, Jangiganj, Dauriyahi, Uttar Pradesh - 221310",
+      phone: "+91 80806 28142"
     }
   });
 

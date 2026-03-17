@@ -38,8 +38,11 @@ export async function getCurrentUser() {
   // All other users must be provisioned manually by an Admin.
   const superAdmin = await isSuperAdmin();
   if (superAdmin) {
-    const adminRole = await prisma.role.findFirst({ where: { name: "Admin" } });
-    if (!adminRole) return null;
+    const adminRole = await prisma.role.upsert({
+      where: { name: "Admin" },
+      create: { name: "Admin" },
+      update: {},
+    });
 
     const clerkUser = await currentUser();
     const primaryEmail = clerkUser?.emailAddresses.find(
