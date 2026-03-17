@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, RotateCcw, StopCircle } from "lucide-react";
 
-const SCAN_INTERVAL_MS = 1500; // Scan every 1.5s for faster detection
-const CONSENSUS_COUNT = 2;      // Require 2 matching reads before accepting
+const SCAN_DELAY_MS = 1500; // Delay between scans (sequential, not overlapping)
+const CONSENSUS_COUNT = 2;   // Require 2 matching reads before accepting
+const HIGH_CONFIDENCE = 0.92; // Accept single frame if confidence is very high
 
 function normalizePlate(text: string): string {
   const cleaned = text
@@ -23,12 +24,11 @@ function normalizePlate(text: string): string {
 function enhanceContrast(ctx: CanvasRenderingContext2D, width: number, height: number) {
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
-  // Simple contrast stretch: boost contrast by 40%
   const factor = (259 * (128 + 100)) / (255 * (259 - 100));
   for (let i = 0; i < data.length; i += 4) {
-    data[i]     = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));     // R
-    data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128)); // G
-    data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128)); // B
+    data[i]     = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));
+    data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
+    data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
   }
   ctx.putImageData(imageData, 0, 0);
 }
@@ -45,8 +45,9 @@ export function VehicleScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const recentPlatesRef = useRef<string[]>([]); // Multi-frame consensus buffer
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanningActiveRef = useRef(false); // controls the setTimeout chain
+  const recentPlatesRef = useRef<string[]>([]);
 
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -54,23 +55,30 @@ export function VehicleScanner() {
   const [autoScanning, setAutoScanning] = useState(false);
   const [confidence, setConfidence] = useState(0);
   const [statusText, setStatusText] = useState("Initializing camera…");
+  const [fallbackLoading, setFallbackLoading] = useState(false);
+
+  const stopScanning = useCallback(() => {
+    scanningActiveRef.current = false;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setAutoScanning(false);
+  }, []);
 
   const stopCamera = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    stopScanning();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setCameraActive(false);
-    setAutoScanning(false);
     recentPlatesRef.current = [];
-  }, []);
+  }, [stopScanning]);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      scanningActiveRef.current = false;
+      if (timerRef.current) clearTimeout(timerRef.current);
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
@@ -108,7 +116,6 @@ export function VehicleScanner() {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
-    // Enhance contrast for better plate readability
     enhanceContrast(ctx, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", 0.85);
   }, []);
@@ -132,7 +139,6 @@ export function VehicleScanner() {
 
   const handlePlateFound = useCallback(
     async (plate: string) => {
-      // Look up vehicle in the database
       const res = await fetch(`/api/vehicles/lookup?plate=${encodeURIComponent(plate)}`);
       const data = await res.json();
       if (data?.customerId && data?.vehicleId) {
@@ -150,10 +156,16 @@ export function VehicleScanner() {
   const fallbackClientOCR = useCallback(
     async (dataUrl: string) => {
       setScanning(true);
+      setFallbackLoading(true);
       setResult(null);
-      setStatusText("Running client-side OCR (Tesseract)…");
+      setStatusText("Loading local OCR engine… this may take 10–15 seconds");
+
+      // Give the UI a tick to render the loading state before Tesseract blocks the thread
+      await new Promise((r) => setTimeout(r, 100));
+
       try {
         const Tesseract = await import("tesseract.js");
+        setStatusText("Processing image locally…");
         const {
           data: { text },
         } = await Tesseract.recognize(dataUrl, "eng", { logger: () => {} });
@@ -164,25 +176,35 @@ export function VehicleScanner() {
         setResult("Scan failed. Try again.");
       } finally {
         setScanning(false);
+        setFallbackLoading(false);
       }
     },
     [handlePlateFound]
   );
 
-  // ── Auto-scan: captures a frame every SCAN_INTERVAL_MS ──────────────
+  // ── Auto-scan loop using setTimeout chain (no overlapping scans) ─────
   const startAutoScan = useCallback(() => {
-    if (intervalRef.current) return;
+    if (scanningActiveRef.current) return;
+    scanningActiveRef.current = true;
     setAutoScanning(true);
     recentPlatesRef.current = [];
     setStatusText("Scanning… point at the number plate");
 
-    intervalRef.current = setInterval(async () => {
+    const runScan = async () => {
+      if (!scanningActiveRef.current) return;
+
       const frame = captureFrame();
-      if (!frame) return;
+      if (!frame) {
+        // Video not ready yet, retry after a short delay
+        timerRef.current = setTimeout(runScan, 500);
+        return;
+      }
 
       setScanning(true);
       const scanResult = await processFrame(frame);
       setScanning(false);
+
+      if (!scanningActiveRef.current) return; // stopped while awaiting
 
       if (scanResult?.plate && scanResult.confidence > 0.6) {
         const normalizedPlate = scanResult.plate.replace(/\s/g, "").toUpperCase();
@@ -193,27 +215,38 @@ export function VehicleScanner() {
           recentPlatesRef.current = recentPlatesRef.current.slice(-5);
         }
 
-        // Multi-frame consensus: accept only if the same plate appeared >= CONSENSUS_COUNT times
+        // High-confidence single-frame accept OR multi-frame consensus
         const plateCount = recentPlatesRef.current.filter((p) => p === normalizedPlate).length;
-        if (plateCount >= CONSENSUS_COUNT) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          intervalRef.current = null;
+        const accepted =
+          scanResult.confidence >= HIGH_CONFIDENCE || plateCount >= CONSENSUS_COUNT;
+
+        if (accepted) {
+          scanningActiveRef.current = false;
           setAutoScanning(false);
           setResult(normalizedPlate);
           setConfidence(scanResult.confidence);
           setStatusText(`Plate confirmed: ${normalizedPlate}`);
           await handlePlateFound(normalizedPlate);
+          return; // Don't schedule next scan
         } else {
           setStatusText(`Detected "${normalizedPlate}" — confirming…`);
         }
       } else if (scanResult?.fallback) {
-        // No API key — fall back to single manual capture with client OCR
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = null;
+        // No API key — fall back to single capture with client OCR
+        scanningActiveRef.current = false;
         setAutoScanning(false);
         await fallbackClientOCR(frame);
+        return; // Don't schedule next scan
       }
-    }, SCAN_INTERVAL_MS);
+
+      // Schedule next scan only after current one completes (no overlap)
+      if (scanningActiveRef.current) {
+        timerRef.current = setTimeout(runScan, SCAN_DELAY_MS);
+      }
+    };
+
+    // Start the first scan
+    runScan();
   }, [captureFrame, processFrame, handlePlateFound, fallbackClientOCR]);
 
   // ── Auto-start camera on mount ──────────────────────────────────────
@@ -225,7 +258,6 @@ export function VehicleScanner() {
   // ── Auto-start scanning when camera becomes active ──────────────────
   useEffect(() => {
     if (cameraActive && !autoScanning && !result) {
-      // Small delay to let the video feed stabilize
       const timer = setTimeout(() => startAutoScan(), 800);
       return () => clearTimeout(timer);
     }
@@ -254,14 +286,21 @@ export function VehicleScanner() {
             Auto-scanning…
           </div>
         )}
+        {fallbackLoading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 text-white">
+            <Loader2 className="size-8 animate-spin" />
+            <span className="text-sm font-medium">{statusText}</span>
+            <span className="text-xs text-white/60">First load may take longer</span>
+          </div>
+        )}
         {/* Status bar */}
-        {cameraActive && (
+        {cameraActive && !fallbackLoading && (
           <div className="absolute bottom-0 inset-x-0 bg-black/60 px-3 py-1.5 text-xs text-white/90 text-center">
             {statusText}
           </div>
         )}
         {/* Viewfinder overlay */}
-        {cameraActive && (
+        {cameraActive && !fallbackLoading && (
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute left-[10%] right-[10%] top-[30%] bottom-[30%] rounded-lg border-2 border-white/50" />
           </div>

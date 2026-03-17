@@ -30,9 +30,9 @@ export async function getBranches() {
 
 export async function getBranchById(id: string) {
   await requireAuthenticatedUser();
-  const safeId = validateId(id);
+  // We don't use validateId here because legacy branch IDs from seed (e.g. "mac-jangiganj") are not UUIDs
   return prisma.branch.findUnique({
-    where: { id: safeId },
+    where: { id },
     include: {
       userBranches: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
       staff: { select: { id: true, name: true, role: true } },
@@ -146,9 +146,9 @@ export async function setSelectedBranch(branchId: string | null) {
   const cookieStore = await cookies();
 
   if (branchId) {
-    validateId(branchId);
-
-    // Validate that the branch actually exists
+    // Validate that the branch actually exists. 
+    // We intentionally SKIP validateId(branchId) here because legacy 
+    // branch IDs from seeds (e.g. "mac-jangiganj") might not be UUIDs.
     const branch = await prisma.branch.findUnique({
       where: { id: branchId, isActive: true },
       select: { id: true },
