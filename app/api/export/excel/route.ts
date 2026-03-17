@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
       prisma.expense.findMany({ where: branchWhere, orderBy: { date: "desc" }, take: 2000 }),
     ]);
     const rows = [
-      ...payments.map((p: any) => ({ Date: p.paidAt.toISOString().slice(0,10), Type: "INCOME", Reference: p.invoice?.invoiceNumber ?? "", Method: p.method, Amount: Number(p.amount) })),
-      ...expenses.map((e: any) => ({ Date: e.date.toISOString().slice(0,10), Type: "EXPENSE", Reference: e.description ?? "", Method: e.category, Amount: -Number(e.amount) })),
+      ...payments.map((p: any) => ({ Date: p.paidAt.toISOString().slice(0, 10), Type: "INCOME", Reference: p.invoice?.invoiceNumber ?? "", Method: p.method, Amount: Number(p.amount) })),
+      ...expenses.map((e: any) => ({ Date: e.date.toISOString().slice(0, 10), Type: "EXPENSE", Reference: e.description ?? "", Method: e.category, Amount: -Number(e.amount) })),
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Financial");
   }
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
   async function buildJobCardsSheet() {
     const cards = await prisma.jobCard.findMany({ where: branchWhere, orderBy: { createdAt: "desc" }, take: 2000, include: { vehicle: { select: { numberPlate: true, make: true, model: true } }, customer: { select: { name: true, phone: true } }, technician: { select: { name: true } }, branch: { select: { name: true } } } });
-    const rows = cards.map((j: any) => ({ Created: j.createdAt.toISOString().slice(0,10), Branch: j.branch?.name ?? "", "Vehicle No": j.vehicle.numberPlate, Customer: j.customer.name, Phone: j.customer.phone, Technician: j.technician?.name ?? "", Status: j.status, "Est. Cost": j.estimatedCost ? Number(j.estimatedCost) : "" }));
+    const rows = cards.map((j: any) => ({ Created: j.createdAt.toISOString().slice(0, 10), Branch: j.branch?.name ?? "", "Vehicle No": j.vehicle.numberPlate, Customer: j.customer.name, Phone: j.customer.phone, Technician: j.technician?.name ?? "", Status: j.status, "Est. Cost": j.estimatedCost ? Number(j.estimatedCost) : "" }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Job Cards");
   }
 
@@ -62,11 +62,11 @@ export async function GET(request: NextRequest) {
   }
 
   switch (type) {
-    case "financial":  await buildFinancialSheet();  break;
-    case "inventory":  await buildInventorySheet();  break;
-    case "staff":      await buildStaffSheet();      break;
-    case "jobcards":   await buildJobCardsSheet();   break;
-    case "customers":  await buildCustomersSheet();  break;
+    case "financial": await buildFinancialSheet(); break;
+    case "inventory": await buildInventorySheet(); break;
+    case "staff": await buildStaffSheet(); break;
+    case "jobcards": await buildJobCardsSheet(); break;
+    case "customers": await buildCustomersSheet(); break;
     case "full":
       await buildFinancialSheet(); await buildInventorySheet();
       await buildStaffSheet(); await buildJobCardsSheet(); await buildCustomersSheet();
@@ -75,6 +75,6 @@ export async function GET(request: NextRequest) {
   }
 
   const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  const filename = `mac-${type}-${branchLabel}-${new Date().toISOString().slice(0,10)}.xlsx`;
+  const filename = `mac-${type}-${branchLabel}-${new Date().toISOString().slice(0, 10)}.xlsx`;
   return new NextResponse(buf, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="${filename}"` } });
 }
