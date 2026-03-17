@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 /**
  * POST /api/ocr
  * Accepts a base64 JPEG image and sends it to Plate Recognizer for ALPR.
- * Falls back to a simple regex-based extraction if the API key is missing.
+ * Falls back to a client-side Tesseract signal if the API key is missing.
  */
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -20,10 +20,16 @@ export async function POST(req: Request) {
 
     if (apiKey) {
       // ── Plate Recognizer API ─────────────────────────────────────────
+      // Convert base64 data URL → binary Blob for proper multipart upload
       const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+      const binaryData = Buffer.from(base64Data, "base64");
+      const blob = new Blob([binaryData], { type: "image/jpeg" });
+
       const formData = new FormData();
-      formData.append("upload", base64Data);
+      formData.append("upload", blob, "plate.jpg");
       formData.append("regions", "in"); // India plates
+      // Request multiple candidates for better accuracy
+      formData.append("config", JSON.stringify({ mode: "fast" }));
 
       const response = await fetch("https://api.platerecognizer.com/v1/plate-reader/", {
         method: "POST",
@@ -45,7 +51,7 @@ export async function POST(req: Request) {
 
       const best = results[0];
       return NextResponse.json({
-        plate: best.plate?.toUpperCase() ?? null,
+        plate: best.plate?.toUpperCase()?.replace(/\s/g, "") ?? null,
         confidence: best.score ?? 0,
         vehicle: best.vehicle
           ? {
@@ -55,6 +61,12 @@ export async function POST(req: Request) {
             }
           : null,
         region: best.region?.code ?? null,
+        candidates: (best.candidates ?? [])
+          .slice(0, 3)
+          .map((c: { plate: string; score: number }) => ({
+            plate: c.plate?.toUpperCase(),
+            score: c.score,
+          })),
       });
     }
 

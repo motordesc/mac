@@ -2,7 +2,7 @@
 
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireRole } from "@/lib/actions/auth-guard";
 import { getAuthorizedBranchId } from "@/lib/branch";
 import { z } from "zod";
@@ -228,10 +228,13 @@ export async function processQuickSale(data: QuickSaleInput) {
     return { jobCard, invoice, customerId, vehicleId };
   });
 
+  updateTag("dashboard");
+  updateTag("inventory");
   revalidatePath("/jobcards");
   revalidatePath("/invoices");
   revalidatePath("/dashboard");
   revalidatePath("/cashbook");
+  revalidatePath("/inventory");
 
   return result;
 }

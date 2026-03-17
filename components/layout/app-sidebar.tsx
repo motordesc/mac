@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -19,7 +20,6 @@ import {
   Settings,
   GitBranch,
   Zap,
-  Wrench,
 } from "lucide-react";
 
 const navGroups = [
@@ -75,9 +75,13 @@ export function AppSidebar() {
     <aside className="hidden w-64 flex-col border-r border-border bg-card md:flex fixed inset-y-0 left-0 z-30">
       {/* Logo */}
       <div className="flex h-14 items-center gap-2.5 border-b border-border px-4">
-        <div className="flex size-7 items-center justify-center rounded-lg bg-primary shrink-0">
-          <Wrench className="size-4 text-primary-foreground" />
-        </div>
+        <Image
+          src="/logo.png"
+          alt="Motor Auto Care"
+          width={28}
+          height={28}
+          className="rounded-lg shrink-0"
+        />
         <span className="font-semibold text-foreground tracking-tight">Motor Auto Care</span>
       </div>
 

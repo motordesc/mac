@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { getSelectedBranchId } from "@/lib/branch";
 import Link from "next/link";
 
 export default async function InventoryPage({
@@ -14,10 +15,13 @@ export default async function InventoryPage({
   const isLowStock = lowStock === "1";
   const currentPage = page ? parseInt(page, 10) : 1;
 
+  const branchId = await getSelectedBranchId();
+
   const { items, total, totalPages } = await getInventoryItems({
     lowStock: isLowStock,
     page: currentPage,
     limit: 20,
+    branchId,
   });
 
   return (

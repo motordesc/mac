@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { createJobCardSchema, updateJobCardSchema } from "@/lib/validations/jobcard";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireRole, requireAuthenticatedUser } from "@/lib/actions/auth-guard";
 import { validateId } from "@/lib/utils/validate-id";
 import { getSelectedBranchId } from "@/lib/branch";
@@ -92,6 +92,7 @@ export async function createJobCard(formData: FormData) {
   const created = await prisma.jobCard.create({
     data: { ...parsed.data, branchId },
   });
+  updateTag("dashboard");
   revalidatePath("/jobcards");
   revalidatePath("/dashboard");
   return created;
@@ -118,6 +119,7 @@ export async function updateJobCard(id: string, formData: FormData) {
     where: { id: safeId },
     data: parsed.data as Parameters<typeof prisma.jobCard.update>[0]["data"],
   });
+  updateTag("dashboard");
   revalidatePath("/jobcards");
   revalidatePath(`/jobcards/${safeId}`);
   revalidatePath("/dashboard");
@@ -128,6 +130,7 @@ export async function deleteJobCard(id: string) {
   await requireRole(["Admin"]);
   const safeId = validateId(id);
   await prisma.jobCard.delete({ where: { id: safeId } });
+  updateTag("dashboard");
   revalidatePath("/jobcards");
   revalidatePath("/dashboard");
 }

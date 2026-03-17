@@ -1,5 +1,5 @@
 import { streamText, convertToModelMessages, validateUIMessages } from "ai";
-import { openrouter, MODELS, FALLBACK_CHAIN, DEFAULT_MODEL } from "@/lib/ai/openrouter";
+import { openrouter, MODELS, FALLBACK_CHAIN } from "@/lib/ai/openrouter";
 import { aiTools } from "@/lib/ai/tools";
 import { auth } from "@clerk/nextjs/server";
 import { getAuthorizedBranchId } from "@/lib/branch";
@@ -40,36 +40,28 @@ Be concise, professional, and actionable. When you identify a business problem (
     const validatedMessages = await validateUIMessages(body.messages);
     const modelMessages = await convertToModelMessages(validatedMessages);
 
-    // ── Multi-model routing with fallback ────────────────────────────
-    const modelChain = requestedModel
-      ? [requestedModel, ...FALLBACK_CHAIN.map((k) => MODELS[k])]
-      : FALLBACK_CHAIN.map((k) => MODELS[k]);
+    // ── Model selection ─────────────────────────────────────────────────
+    // Use the primary model from the fallback chain (most reliable).
+    // streamText() returns immediately — errors only surface when the
+    // stream is consumed. A try/catch here can't catch model failures,
+    // so we rely on AI SDK's built-in maxRetries for resilience and
+    // use the most reliable model first.
+    const primaryModel = requestedModel
+      ?? MODELS[FALLBACK_CHAIN[0]];
 
-    let lastError: unknown = null;
+    const result = streamText({
+      model: openrouter(primaryModel),
+      system: SYSTEM_PROMPT,
+      messages: modelMessages,
+      tools: aiTools,
+      maxRetries: 3,
+      // Log errors for observability without breaking the stream
+      onError: ({ error }) => {
+        console.error(`AI stream error (model: ${primaryModel}):`, error);
+      },
+    });
 
-    for (const modelId of modelChain) {
-      try {
-        const result = streamText({
-          model: openrouter(modelId),
-          system: SYSTEM_PROMPT,
-          messages: modelMessages,
-          tools: aiTools,
-          maxRetries: 2,
-        });
-        return result.toUIMessageStreamResponse();
-      } catch (err) {
-        lastError = err;
-        console.warn(`Model ${modelId} failed, trying next fallback…`, err);
-        continue;
-      }
-    }
-
-    // All models failed
-    console.error("All AI models failed:", lastError);
-    return NextResponse.json(
-      { error: "AI service unavailable. All models failed. Please try again." },
-      { status: 503 }
-    );
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(
