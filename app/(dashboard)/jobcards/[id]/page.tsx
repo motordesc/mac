@@ -114,7 +114,7 @@ export default async function JobCardDetailPage({
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-lg font-bold text-foreground">{formatCurrency(jc.invoice.total)}</p>
+            <p className="text-lg font-bold text-foreground">{formatCurrency(Number(jc.invoice.total))}</p>
             {totalPaid > 0 && totalPaid < Number(jc.invoice.total) && (
               <p className="text-xs text-muted-foreground">
                 Paid: {formatCurrency(totalPaid)} · Due: {formatCurrency(balance ?? 0)}
@@ -180,14 +180,14 @@ export default async function JobCardDetailPage({
             {jc.estimatedCost != null && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Estimated</span>
-                <span className="font-medium">{formatCurrency(jc.estimatedCost)}</span>
+                <span className="font-medium">{formatCurrency(Number(jc.estimatedCost))}</span>
               </div>
             )}
             {jc.invoice && (
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Invoice Total</span>
-                  <span className="font-medium">{formatCurrency(jc.invoice.total)}</span>
+                  <span className="font-medium">{formatCurrency(Number(jc.invoice.total))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Amount Paid</span>

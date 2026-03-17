@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { tool } from "ai";
+import { tool as _tool } from "ai";
 import { z } from "zod";
+
+// Bypass Zod interface mismatch causing TS2769
+const tool = _tool as any;
 
 export const getRevenueStats = tool({
   description: "Get revenue statistics. Optionally filter by branch.",
@@ -8,7 +11,7 @@ export const getRevenueStats = tool({
     period: z.enum(["today", "week", "month"]).optional().default("month"),
     branchId: z.string().optional(),
   }),
-  execute: async ({ period, branchId }) => {
+  execute: async ({ period, branchId }: { period: "today" | "week" | "month"; branchId?: string }) => {
     const now = new Date();
     const start = period === "today" ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
       : period === "week" ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -27,7 +30,7 @@ export const getRevenueStats = tool({
 export const getInventoryLevels = tool({
   description: "Get inventory stock levels. Optionally filter by branch.",
   parameters: z.object({ branchId: z.string().optional() }),
-  execute: async ({ branchId }) => {
+  execute: async ({ branchId }: { branchId?: string }) => {
     const items = await prisma.inventoryItem.findMany({
       where: branchId ? { branchId } : {},
       select: { name: true, sku: true, quantity: true, minQuantity: true, branch: { select: { name: true } } },
@@ -40,7 +43,7 @@ export const getInventoryLevels = tool({
 export const getVehicleHistory = tool({
   description: "Get service history for a vehicle by number plate.",
   parameters: z.object({ numberPlate: z.string() }),
-  execute: async ({ numberPlate }) => {
+  execute: async ({ numberPlate }: { numberPlate: string }) => {
     const vehicle = await prisma.vehicle.findFirst({
       where: { numberPlate: { contains: numberPlate, mode: "insensitive" } },
       include: {
@@ -61,7 +64,7 @@ export const getVehicleHistory = tool({
 export const getCustomerData = tool({
   description: "Look up customers by name or phone.",
   parameters: z.object({ phone: z.string().optional(), name: z.string().optional() }),
-  execute: async ({ phone, name }) => {
+  execute: async ({ phone, name }: { phone?: string; name?: string }) => {
     if (!phone && !name) {
       throw new Error("At least one of phone or name must be provided");
     }
@@ -84,7 +87,7 @@ export const getJobCardSummary = tool({
     branchId: z.string().optional(),
     limit: z.number().min(1).max(50).optional().default(10),
   }),
-  execute: async ({ status, branchId, limit }) => {
+  execute: async ({ status, branchId, limit }: { status?: "OPEN" | "IN_PROGRESS" | "COMPLETED" | "CLOSED"; branchId?: string; limit: number }) => {
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (branchId) where.branchId = branchId;
@@ -124,7 +127,7 @@ export const getBranchOverview = tool({
 export const getBusinessInsights = tool({
   description: "Get a business health summary to help grow the business. Covers open jobs, completions, unpaid invoices, low stock, and top services.",
   parameters: z.object({ branchId: z.string().optional() }),
-  execute: async ({ branchId }) => {
+  execute: async ({ branchId }: { branchId?: string }) => {
     const now = new Date();
     const bw = branchId ? { branchId } : {};
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

@@ -35,7 +35,7 @@ export default async function InvoicesPage({
   const limit = 20;
   const skip  = (currentPage - 1) * limit;
 
-  const where = status ? { status } : {};
+  const where: any = status ? { status } : {};
 
   const [invoices, total] = await Promise.all([
     prisma.invoice.findMany({

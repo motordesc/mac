@@ -79,14 +79,14 @@ export async function GET(
     tax: Number(invoice.tax),
     total: Number(invoice.total),
     status: invoice.status,
-    taxRate,
+    taxRate: taxRate as any,
   };
 
   try {
-    const stream = await renderToStream(React.createElement(InvoicePdfDocument, { data }));
+    const stream = await renderToStream(React.createElement(InvoicePdfDocument, { data }) as any);
     const buffer = await streamToBuffer(stream as Readable);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(buffer as any, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="invoice-${invoice.invoiceNumber}.pdf"`,

@@ -142,15 +142,15 @@ export default async function InvoiceDetailPage({
             <div className="w-60 space-y-1.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCurrency(invoice.subtotal)}</span>
+                <span>{formatCurrency(Number(invoice.subtotal))}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tax</span>
-                <span>{formatCurrency(invoice.tax)}</span>
+                <span>{formatCurrency(Number(invoice.tax))}</span>
               </div>
               <div className="flex justify-between rounded-lg bg-primary px-3 py-2 font-semibold text-primary-foreground">
                 <span>Total</span>
-                <span>{formatCurrency(invoice.total)}</span>
+                <span>{formatCurrency(Number(invoice.total))}</span>
               </div>
             </div>
           </div>
