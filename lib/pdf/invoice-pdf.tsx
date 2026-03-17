@@ -4,9 +4,8 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
-  Line,
-  Svg,
 } from "@react-pdf/renderer";
 
 const BRAND_COLOR = "#1a56db";
@@ -20,7 +19,9 @@ const styles = StyleSheet.create({
 
   // Header
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 28 },
-  brandBlock: { flexDirection: "column", gap: 3 },
+  brandBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
+  brandTextBlock: { flexDirection: "column", gap: 3 },
+  logo: { width: 48, height: 48, borderRadius: 8 },
   companyName: { fontSize: 20, fontFamily: "Helvetica-Bold", color: BRAND_COLOR, letterSpacing: 0.5 },
   branchName: { fontSize: 11, color: DARK, fontFamily: "Helvetica-Bold" },
   branchDetail: { fontSize: 9, color: MUTED },
@@ -75,6 +76,7 @@ type InvoiceItem = { description: string; quantity: number; unitPrice: { toStrin
 
 export type InvoiceData = {
   companyName: string;
+  logoUrl?: string;
   branchName?: string;
   branchAddress?: string;
   branchPhone?: string;
@@ -115,10 +117,15 @@ export function InvoicePdfDocument({ data }: { data: InvoiceData }) {
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <View style={styles.header}>
           <View style={styles.brandBlock}>
-            <Text style={styles.companyName}>Motor Auto Care</Text>
-            {data.branchName && <Text style={styles.branchName}>{data.branchName}</Text>}
-            {data.branchAddress && <Text style={styles.branchDetail}>{data.branchAddress}</Text>}
-            {data.branchPhone  && <Text style={styles.branchDetail}>{data.branchPhone}</Text>}
+            {data.logoUrl && (
+              <Image style={styles.logo} src={data.logoUrl} />
+            )}
+            <View style={styles.brandTextBlock}>
+              <Text style={styles.companyName}>{data.companyName}</Text>
+              {data.branchName && <Text style={styles.branchName}>{data.branchName}</Text>}
+              {data.branchAddress && <Text style={styles.branchDetail}>{data.branchAddress}</Text>}
+              {data.branchPhone  && <Text style={styles.branchDetail}>{data.branchPhone}</Text>}
+            </View>
           </View>
           <View style={styles.invoiceTitleBlock}>
             <Text style={styles.invoiceTitle}>Invoice</Text>
@@ -193,7 +200,7 @@ export function InvoicePdfDocument({ data }: { data: InvoiceData }) {
         <View style={styles.footer} fixed>
           <View style={styles.footerDivider} />
           <Text style={styles.footerText}>
-            Motor Auto Care{data.branchName ? ` — ${data.branchName}` : ""} · Thank you for your business!
+            {data.companyName}{data.branchName ? ` — ${data.branchName}` : ""} · Thank you for your business!
           </Text>
         </View>
 
@@ -201,5 +208,3 @@ export function InvoicePdfDocument({ data }: { data: InvoiceData }) {
     </Document>
   );
 }
-
-

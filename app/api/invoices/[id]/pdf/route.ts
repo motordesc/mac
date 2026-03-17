@@ -55,8 +55,14 @@ export async function GET(
   const taxRateSetting = settings.find((s: { key: string; value: string }) => s.key === "tax_rate");
   const taxRate = taxRateSetting ? Number(taxRateSetting.value) : undefined;
 
+  // Build the logo URL from the request origin (works on Vercel and locally)
+  const origin = _request.headers.get("host") ?? "localhost:3000";
+  const protocol = origin.includes("localhost") ? "http" : "https";
+  const logoUrl = `${protocol}://${origin}/logo.png`;
+
   const data = {
     companyName: "Motor Auto Care",
+    logoUrl,
     branchName: invoice.branch?.name,
     branchAddress: invoice.branch?.address ?? undefined,
     branchPhone: invoice.branch?.phone ?? undefined,

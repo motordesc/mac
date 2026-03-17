@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { createInventoryItemSchema, updateInventoryItemSchema } from "@/lib/validations/inventory";
 import { revalidatePath } from "next/cache";
 import { requireRole, requireAuthenticatedUser } from "@/lib/actions/auth-guard";
@@ -20,6 +21,11 @@ export async function getInventoryItems(params: {
   const skip = (page - 1) * limit;
 
   if (params.lowStock) {
+    // Build the optional branch filter using Prisma.sql / Prisma.empty
+    const branchFilter = params.branchId
+      ? Prisma.sql`AND i."branchId" = ${params.branchId}`
+      : Prisma.empty;
+
     const [items, countResult] = await Promise.all([
       prisma.$queryRaw<
         Array<{
@@ -37,13 +43,13 @@ export async function getInventoryItems(params: {
       >`
         SELECT
           i.id, i.name, i.sku, i.quantity, i."minQuantity",
-          i."purchasePrice"::float AS "purchasePrice", i."sellingPrice"::float AS "sellingPrice", 
+          i."purchasePrice"::float AS "purchasePrice", i."sellingPrice"::float AS "sellingPrice",
           i."supplierId", i."branchId",
           s.name AS supplier_name
         FROM "InventoryItem" i
         LEFT JOIN "Supplier" s ON i."supplierId" = s.id
         WHERE i.quantity <= i."minQuantity"
-        ${params.branchId ? prisma.$queryRaw`AND i."branchId" = ${params.branchId}` : prisma.$queryRaw``}
+        ${branchFilter}
         ORDER BY i.name ASC
         LIMIT ${limit} OFFSET ${skip}
       `,
@@ -51,11 +57,11 @@ export async function getInventoryItems(params: {
         SELECT COUNT(*)::bigint AS count
         FROM "InventoryItem" i
         WHERE i.quantity <= i."minQuantity"
-        ${params.branchId ? prisma.$queryRaw`AND i."branchId" = ${params.branchId}` : prisma.$queryRaw``}
+        ${branchFilter}
       `,
     ]);
     const total = Number(countResult[0].count);
-    const shaped = items.map((i: { supplier_name: any; }) => ({
+    const shaped = items.map((i) => ({
       ...i,
       supplier: i.supplier_name ? { name: i.supplier_name } : null,
     }));
@@ -78,13 +84,16 @@ export async function getInventoryItems(params: {
 
 export async function getLowStockCount(branchId?: string | null) {
   await requireAuthenticatedUser();
-  const where = branchId ? { branchId } : {};
-  // Prisma raw for column-to-column comparison
+
+  const branchFilter = branchId
+    ? Prisma.sql`AND "branchId" = ${branchId}`
+    : Prisma.empty;
+
   const result = await prisma.$queryRaw<[{ count: bigint }]>`
     SELECT COUNT(*)::bigint AS count
     FROM "InventoryItem"
     WHERE quantity <= "minQuantity"
-    ${branchId ? prisma.$queryRaw`AND "branchId" = ${branchId}` : prisma.$queryRaw``}
+    ${branchFilter}
   `;
   return Number(result[0].count);
 }

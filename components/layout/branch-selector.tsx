@@ -46,7 +46,8 @@ export function BranchSelector({
     startTransition(async () => {
       try {
         await setSelectedBranch(value === "__all__" ? null : value);
-        router.refresh();
+        // Full reload to ensure all server components re-fetch with the new branch cookie
+        window.location.reload();
       } catch {
         toast.error("Could not switch branch");
       }

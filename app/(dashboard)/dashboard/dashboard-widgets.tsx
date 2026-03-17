@@ -15,16 +15,29 @@ import {
   Car,
   Wrench,
   Receipt,
-  LucideIcon,
+  type LucideIcon,
 } from "lucide-react";
+
+// ── Icon registry (resolved client-side from string names) ─────────────────
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  FileText,
+  CheckCircle2,
+  Archive,
+  Clock,
+  CreditCard,
+  TrendingUp,
+  Calendar,
+  AlertTriangle,
+};
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type Widget = {
+export type WidgetData = {
   title: string;
   value: string | number;
   href?: string;
-  icon: LucideIcon;
+  iconName: string;            // serializable string instead of function
   color: "blue" | "green" | "slate" | "amber" | "red" | "purple";
   description?: string;
 };
@@ -38,7 +51,7 @@ type QuickAction = {
 
 // ── Colour maps ────────────────────────────────────────────────────────────
 
-const iconBg: Record<Widget["color"], string> = {
+const iconBg: Record<WidgetData["color"], string> = {
   blue:   "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   green:  "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
   slate:  "bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400",
@@ -56,8 +69,8 @@ const actionBg: Record<QuickAction["color"], string> = {
 
 // ── Widget card ────────────────────────────────────────────────────────────
 
-function WidgetCard({ widget }: { widget: Widget }) {
-  const Icon = widget.icon;
+function WidgetCard({ widget }: { widget: WidgetData }) {
+  const Icon = ICON_MAP[widget.iconName] ?? FileText;
   const inner = (
     <div className="flex items-center gap-4">
       <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", iconBg[widget.color])}>
@@ -108,10 +121,10 @@ function QuickActionButton({ action }: { action: QuickAction }) {
 
 // ── Exports ────────────────────────────────────────────────────────────────
 
-export function DashboardWidgets({ widgets }: { widgets: Widget[] }) {
+export function DashboardWidgets({ widgets }: { widgets: WidgetData[] }) {
   return (
     <div className="grid gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-      {widgets.map((w: any) => (
+      {widgets.map((w) => (
         <WidgetCard key={w.title} widget={w} />
       ))}
     </div>
@@ -132,22 +145,10 @@ export function QuickActions() {
         Quick Actions
       </h2>
       <div className="grid grid-cols-4 gap-3 sm:grid-cols-4">
-        {actions.map((a: any) => (
+        {actions.map((a) => (
           <QuickActionButton key={a.href} action={a} />
         ))}
       </div>
     </div>
   );
 }
-
-// Re-export icon helpers for use in the dashboard page
-export const WIDGET_ICONS = {
-  FileText,
-  CheckCircle2,
-  Archive,
-  Clock,
-  CreditCard,
-  TrendingUp,
-  Calendar,
-  AlertTriangle,
-} as const;

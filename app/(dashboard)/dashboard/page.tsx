@@ -5,16 +5,7 @@ import { startOfDay, startOfMonth, subDays, format } from "date-fns";
 import { Suspense } from "react";
 import { DashboardCharts } from "./dashboard-charts";
 import { DashboardWidgets, QuickActions } from "./dashboard-widgets";
-import {
-  FileText,
-  CheckCircle2,
-  Archive,
-  Clock,
-  CreditCard,
-  TrendingUp,
-  Calendar,
-  AlertTriangle,
-} from "lucide-react";
+import type { WidgetData } from "./dashboard-widgets";
 
 export default async function DashboardPage() {
   const now = new Date();
@@ -98,66 +89,67 @@ export default async function DashboardPage() {
         `,
   ]);
 
-  const widgets = [
+  // Pass plain serializable data — NO function references (icons resolved client-side)
+  const widgets: WidgetData[] = [
     {
       title: "Open Job Cards",
       value: openJobCards,
       href: "/jobcards?status=OPEN",
-      icon: FileText,
-      color: "blue" as const,
+      iconName: "FileText",
+      color: "blue",
       description: `${inProgressJobCards} in progress`,
     },
     {
       title: "Completed Jobs",
       value: completedJobCards,
       href: "/jobcards?status=COMPLETED",
-      icon: CheckCircle2,
-      color: "green" as const,
+      iconName: "CheckCircle2",
+      color: "green",
     },
     {
       title: "Pending Payments",
       value: pendingPaymentsCount,
       href: "/invoices?status=PENDING",
-      icon: CreditCard,
-      color: "amber" as const,
+      iconName: "CreditCard",
+      color: "amber",
       description: "Awaiting collection",
     },
     {
       title: "Today's Services",
       value: todayServicesDue,
       href: "/jobcards",
-      icon: Calendar,
-      color: "purple" as const,
+      iconName: "Calendar",
+      color: "purple",
       description: "Due today",
     },
     {
       title: "Daily Revenue",
       value: formatCurrency(Number(dailyRevenue._sum.amount ?? 0)),
-      icon: TrendingUp,
-      color: "green" as const,
+      iconName: "TrendingUp",
+      color: "green",
       description: "Collected today",
     },
     {
       title: "Monthly Revenue",
       value: formatCurrency(Number(monthlyRevenue._sum.amount ?? 0)),
-      icon: Archive,
-      color: "blue" as const,
+      iconName: "Archive",
+      color: "blue",
       description: "This month",
     },
     {
       title: "Inventory Alerts",
       value: lowStockCount,
       href: "/inventory?lowStock=1",
-      icon: AlertTriangle,
-      color: lowStockCount > 0 ? ("red" as const) : ("slate" as const),
+      iconName: "AlertTriangle",
+      color: lowStockCount > 0 ? "red" : "slate",
       description: "Low stock items",
     },
     {
       title: "In Progress",
       value: inProgressJobCards,
       href: "/jobcards?status=IN_PROGRESS",
-      icon: Clock,
-      color: "amber" as const,
+      iconName: "Clock",
+      color: "amber",
       description: "Being serviced",
     },
   ];
