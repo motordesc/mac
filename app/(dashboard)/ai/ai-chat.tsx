@@ -5,8 +5,30 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-function getMessageText(message: { role: string; parts?: Array<{ type: string; text?: string }>; content?: string }): string {
+// ── Model config (must match lib/ai/openrouter.ts) ──────────────────────────
+const CHAT_MODELS = [
+  { key: "deepseek/deepseek-chat-v3-0324:free", label: "DeepSeek v3 (Free)" },
+  { key: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B (Free)" },
+  { key: "mistralai/mistral-nemo:free", label: "Mistral Nemo (Free)" },
+  { key: "google/gemini-2.5-flash-preview", label: "Gemini 2.5 Flash" },
+  { key: "openrouter/auto", label: "Auto (OpenRouter)" },
+] as const;
+
+const DEFAULT_MODEL = CHAT_MODELS[0].key; // DeepSeek v3 (Free)
+
+function getMessageText(message: {
+  role: string;
+  parts?: Array<{ type: string; text?: string }>;
+  content?: string;
+}): string {
   if (typeof message.content === "string") return message.content;
   if (message.parts) {
     const textPart = message.parts.find((p: { type: string }) => p.type === "text");
@@ -17,8 +39,13 @@ function getMessageText(message: { role: string; parts?: Array<{ type: string; t
 
 export function AIChat() {
   const [input, setInput] = useState("");
+  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL);
+
   const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: { model: selectedModel },
+    }),
   });
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -33,6 +60,26 @@ export function AIChat() {
 
   return (
     <div className="space-y-4">
+      {/* Model Selector */}
+      <div className="flex items-center gap-3">
+        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+          Model:
+        </label>
+        <Select value={selectedModel} onValueChange={setSelectedModel}>
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Select model" />
+          </SelectTrigger>
+          <SelectContent>
+            {CHAT_MODELS.map((m) => (
+              <SelectItem key={m.key} value={m.key}>
+                {m.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Chat Messages */}
       <div className="max-h-[400px] space-y-3 overflow-y-auto rounded-lg border border-border p-4">
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground">Send a message to get started.</p>
@@ -47,6 +94,8 @@ export function AIChat() {
           </div>
         ))}
       </div>
+
+      {/* Input */}
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
           value={input}
